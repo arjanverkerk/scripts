@@ -4,6 +4,19 @@ version='0.1'
 
 install_requires = [
     'setuptools',
+    # And the rest
+    'blessings',
+    'flake8',
+    'Flask',
+    'h5py',
+    'ipdb',
+    'ipython',
+    'jinja2',
+    'markdown2',
+    'mutagen',
+    'netCDF4',
+    'Pydap',
+    'pyproj',
     'requests',
 ]
 
