@@ -9,4 +9,5 @@ from __future__ import division
 scripts = [
     'fz-pommo-move = scripts.fz.pommo_move:main',
     'ln_scripts    = scripts.link:main',
+    'newpy         = scripts.newpy:main',
 ]

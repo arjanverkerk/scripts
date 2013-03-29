@@ -30,7 +30,11 @@ def action():
         name = script.split()[0]
         source = os.path.join(BIN_DIR, name)
         target = os.path.join('/usr/local/bin', name)
-        os.symlink(source, target)
+        try:
+            os.symlink(source, target)
+            print('Created: {}'.format(name))
+        except OSError as error:
+            print('{}: {}'.format(error.strerror, name))
 
 
 def main():
