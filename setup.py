@@ -1,4 +1,7 @@
 from setuptools import setup
+
+import console
+
 name='scripts'
 version='0.1'
 
@@ -22,10 +25,6 @@ install_requires = [
     'scipy',
 ]
 
-entry_points = {'console_scripts': [
-  'fz-pommo-move = scripts.fz.pommo_move:main',
-]}
-
 setup(
     name=name,
     version=version,
@@ -36,5 +35,5 @@ setup(
     include_package_data = True,
     zip_safe = False,
     install_requires=install_requires,
-    entry_points=entry_points,
+    entry_points={'console_scripts': console.scripts},
 )
