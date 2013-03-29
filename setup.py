@@ -14,11 +14,13 @@ install_requires = [
     'jinja2',
     'markdown2',
     'mutagen',
+    'numpy',
     'netCDF4',
     'Pillow',
     'Pydap',
     'pyproj',
     'requests',
+    'scipy',
 ]
 
 entry_points = {'console_scripts': [
