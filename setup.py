@@ -15,6 +15,7 @@ install_requires = [
     'markdown2',
     'mutagen',
     'netCDF4',
+    'Pillow',
     'Pydap',
     'pyproj',
     'requests',
