@@ -6,7 +6,6 @@ install_requires = [
     'setuptools',
     # And the rest
     'blessings',
-    'flake8',
     'Flask',
     'h5py',
     'ipdb',
@@ -24,7 +23,7 @@ install_requires = [
 ]
 
 entry_points = {'console_scripts': [
-  'sync = openradar.scripts.sync:main',
+  'fz-pommo-move = scripts.fz.pommo_move:main',
 ]}
 
 setup(
