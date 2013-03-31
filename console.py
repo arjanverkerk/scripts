@@ -11,3 +11,9 @@ scripts = [
     'ln_scripts    = scripts.link:main',
     'newpy         = scripts.newpy:main',
 ]
+
+# Some extra commands to symlink
+commands = [
+    'flake8',
+    'ipython',
+]

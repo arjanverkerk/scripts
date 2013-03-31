@@ -24,10 +24,19 @@ def get_parser():
     return parser
 
 
-def action():
-    """ Create symlinks for all console_scripts of scripts."""
+def get_names():
+    """ Return name generators for console scripts. """
     for script in console.scripts:
         name = script.split()[0]
+        yield name
+    for name in console.commands:
+        yield name
+
+
+
+def action():
+    """ Create symlinks for all console_scripts of scripts."""
+    for name in get_names():
         source = os.path.join(BIN_DIR, name)
         target = os.path.join('/usr/local/bin', name)
         try:
