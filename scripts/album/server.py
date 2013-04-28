@@ -26,5 +26,5 @@ app.add_url_rule('/file/<path:relative_path>',
 
 
 # Main
-def run():
+def main():
     app.run(host='0.0.0.0')
