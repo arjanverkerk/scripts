@@ -7,7 +7,6 @@ import datetime
 import getpass
 import locale
 import os
-import pprint
 import requests
 import sys
 
@@ -35,9 +34,6 @@ LOGIN_URL = config.get('login', 'url')
 REDIRECT_URL = config.get('redirect', 'url')
 POST_URL = config.get('post', 'url')
 
-class ConnectionError(Exception):
-    pass
-
 
 def read_password():
     """
@@ -46,62 +42,31 @@ def read_password():
     password = getpass.getpass('Password for wordpress:')
     return password
 
-def login(username, password):
-    """
-    Return a cookie for use with further requests.
-    """
-    cookies = requests.get(
-        url=LOGIN_URL
-    ).cookies
-    # For some reason we now need to get cookies before posting and use those.
-    response = requests.post(
+
+def get_text(post_id):
+    """ Login in wordpress and get the post. """
+    # Get login page
+    response1 = requests.get(
+        url=LOGIN_URL,
+    )
+    # Post to login, it will modify response1's cookies!
+    requests.post(
         url=LOGIN_URL,
         data={
-            'log': username,
-            'pwd': password,
-            'wp-submit': 'Log in',
+            'log': WORDPRESS_USERNAME,
+            'pwd': read_password(),
+            'wp-submit': 'Log In',
             'testcookie': '1',
             'redirect_to': REDIRECT_URL,
         },
-        cookies=cookies,
+        cookies=response1.cookies,
     )
-    print(response)
-    return cookies  # Apparently these get modified along the way.
-
-def get_text_cached(post_id):
-    temp_file_path = '/tmp/post_' + post_id + '.tmp'
-    try:
-        postfile = codecs.open(temp_file_path, 'r', 'utf-8')
-        text = postfile.read()
-        postfile.close()
-        return text
-    except:
-        password = read_password()
-        username = WORDPRESS_USERNAME
-        cookies = login(username, password)
-        url_template = POST_URL
-        text = requests.get(
-            url=url_template.format(post_id=post_id),
-            cookies=cookies,
-        ).text
-        postfile = codecs.open(temp_file_path, 'w', 'utf-8')
-        postfile.write(text)
-        postfile.close()
-        return text
-
-def get_text(post_id):
-    temp_file_path = '/tmp/post_' + post_id + '.tmp'
-    password = read_password()
-    username = WORDPRESS_USERNAME
-    cookies = login(username, password)
-    url_template = POST_URL
-    response = requests.get(
-        url=url_template.format(post_id=post_id),
-        cookies=cookies,
+    # Get the post
+    response3 = requests.get(
+        url=POST_URL.format(post_id=103),
+        cookies=response1.cookies,
     )
-    import ipdb; ipdb.set_trace() 
-    print(response)
-    return response.text
+    return response3.text
 
 
 def section_from_element(element):
@@ -123,7 +88,7 @@ def styler(style):
 
 def stringify(element):
     return etree.tostring(element, encoding='unicode', pretty_print=True)
-    
+
 
 def children_to_string(element):
     """
@@ -131,35 +96,25 @@ def children_to_string(element):
     """
     return ''.join(map(stringify, element.iterchildren()))
 
+
 def main():
     """ Get the html and convert a little. """
-    
+
     post_id = sys.argv[1]
 
     template_path = '/home/arjan/Dropbox/usr/fz/templates'
     environment = Environment(loader=FileSystemLoader(template_path),
                               extensions=['jinja2.ext.loopcontrols'])
     template_mail = environment.get_template('mail2.html')
-    template_article = environment.get_template('article.html')
 
     text = get_text(post_id)
     xpath = '//section[@itemprop="articleBody"]'
     html = etree.HTML(text).xpath(xpath)[0]
-    output = etree.tostring(html, encoding='unicode')
 
-    # Hoe verder? Hier stylen, door via etree attributen aan te passen
-    # Misschien span element eromheen doen en stukjes serializen? Wel leuk plan.
-
-    # Serializen geheel
-    # Artikelen eruit knippen na het serializen
-
-    # Presto!
-
-    fzmail=etree.Element('fzmail')
+    fzmail = etree.Element('fzmail')
     fzmail.extend(copy.deepcopy(html.getchildren()))
     heading_elements = fzmail.findall('h3')
     sections = map(section_from_element, heading_elements)
-
 
     style_h3 = 'font-family:arial;'
     style_h4 = 'font-family:arial;'
@@ -168,7 +123,10 @@ def main():
 
     # add attributes to images
     for img in fzmail.xpath('//p/img'):
-        img.attrib.update(dict(border='1', hspace='10', vspace='0', align='left'))
+        img.attrib.update(dict(border='1',
+                               hspace='10',
+                               vspace='0',
+                               align='left'))
 
     map(styler(style_a), fzmail.xpath('//a'))
     map(styler(style_p), fzmail.xpath('//p'))
@@ -192,7 +150,10 @@ def main():
         map(styler(style_h3_article), s.xpath('//h3'))
         # add attributes to images
         for img in s.xpath('//img'):
-            img.attrib.update(dict(border='1', hspace='10', vspace='0', align='left'))
+            img.attrib.update(dict(border='1',
+                                   hspace='10',
+                                   vspace='0',
+                                   align='left'))
         article_str = children_to_string(s)
         article_file = codecs.open(
             ('article_' +
