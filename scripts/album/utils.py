@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 
-from album import config
-from album import meta
+from scripts.album import config
+from scripts.album import meta
 
 import flask
 import glob

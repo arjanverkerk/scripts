@@ -12,6 +12,7 @@ scripts = [
     'fz-mail       = scripts.fz.mail:main',
     'ln_scripts    = scripts.link:main',
     'newpy         = scripts.newpy:main',
+    'dbf2csv       = scripts.dbf2csv:main',
 ]
 
 # Some extra commands to symlink
