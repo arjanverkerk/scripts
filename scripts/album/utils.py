@@ -9,10 +9,7 @@ from scripts.album import config
 from scripts.album import meta
 
 import flask
-import glob
-import json
 import os
-import re
 
 
 def get_mime(path):
@@ -33,21 +30,20 @@ def item(path, directory=False):
     return result
 
 
-
 def items_for_path(path):
-    
+
     dirpath, dirnames, filenames = os.walk(path).next()
 
     result = [dict(kind='directory', name='..', path=os.path.dirname(path))]
 
     result += sorted(
-        [d for d in [item(os.path.join(dirpath, dirname), directory=True) 
+        [d for d in [item(os.path.join(dirpath, dirname), directory=True)
          for dirname in dirnames]
          if not d['name'].startswith('.')]
 
     )
     result += sorted(
-        [i for i in [item(os.path.join(dirpath, filename)) 
+        [i for i in [item(os.path.join(dirpath, filename))
                      for filename in filenames]
          if i['mime'] in config.MIME.values()]
     )
@@ -62,5 +58,3 @@ def list_page(path):
 
 def file_page(path):
     return flask.render_template('file.html', item=item(path))
-
-

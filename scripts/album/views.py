@@ -16,19 +16,6 @@ import os
 import re
 
 
-def page_view(relative_path=os.getenv('HOME')):
-    path = os.path.join(config.ROOT_DIR, relative_path)
-    # Directories show the list view
-    if os.path.isdir(path):
-        return utils.list_page(path)
-    # When posting first save
-    if flask.request.method == 'POST':
-        meta.save(path=path, form=flask.request.form)
-        return flask.redirect(flask.url_for('pageview', 
-                                            relative_path=relative_path))
-    return utils.file_page(path)
-
-
 class PageView(views.MethodView):
     """
     Generic view for all pages.
@@ -55,12 +42,12 @@ class FileView(views.MethodView):
 
     def _data(self, path):
         """
-        Supports partial content. 
+        Supports partial content.
         """
         size = os.stat(path).st_size
         match = re.match(config.RANGE_PATTERN,
                          flask.request.headers.get('range', ''))
-        
+
         if match:
             start = int(match.group('start'))
             try:
@@ -73,7 +60,8 @@ class FileView(views.MethodView):
 
         response_headers = {
             'content-type': utils.get_mime(path),
-            'content-range': config.RANGE.format(start=start, stop=size - 1, size=size),
+            'content-range': config.RANGE.format(start=start,
+                                                 stop=size - 1, size=size),
             'accept-ranges': 'bytes',
         }
 
@@ -82,11 +70,7 @@ class FileView(views.MethodView):
         with open(path, 'rb') as f:
             f.seek(start)
             return f.read(start - stop), status, response_headers
-   
+
     def get(self, relative_path):
         path = os.path.join(config.ROOT_DIR, relative_path)
         return self._data(path)
-
-
-        
-        
