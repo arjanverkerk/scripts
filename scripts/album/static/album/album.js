@@ -1,5 +1,7 @@
 function toggle(){
   console.log('toggle');
+  var cb = $('#checkbox')
+  cb.attr("checked", !cb.attr("checked"));
 }
 $(document).on('keydown', null, 'l', toggle);
 

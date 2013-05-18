@@ -8,6 +8,7 @@ Album browser
     Fileview:
         Next / previous, with shortcuts j and k. also moves to next-in-tree outside folder.
         Load next with ajax; slide with bootstrap; remove previous.
+        Also: Changes url. Must be exactly same page compared to when loaded directly.
     In library toggle with shortcut l.
     exif info, or file properties if no exif.
     If file is in library, it is checked.
