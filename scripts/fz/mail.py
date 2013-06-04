@@ -63,7 +63,7 @@ def get_text(post_id):
     )
     # Get the post
     response3 = requests.get(
-        url=POST_URL.format(post_id=103),
+        url=POST_URL.format(post_id=post_id),
         cookies=response1.cookies,
     )
     return response3.text
