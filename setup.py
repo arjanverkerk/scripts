@@ -15,6 +15,7 @@ install_requires = [
     'ipdb',
     'ipython',
     'jinja2',
+    'lz4',
     'markdown2',
     'mutagen',
     'numpy',
