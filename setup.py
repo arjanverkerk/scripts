@@ -17,7 +17,6 @@ install_requires = [
     'jinja2',
     'lz4',
     'markdown2',
-    'mutagen',
     'numpy',
     'netCDF4',
     'Pillow',
