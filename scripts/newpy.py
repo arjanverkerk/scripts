@@ -21,6 +21,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
 
 
 def get_parser():
@@ -38,6 +42,7 @@ def command():
 
 def main():
     """ Call command with args from parser. """
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     command(**vars(get_parser().parse_args()))
 '''
 

@@ -49,8 +49,8 @@ def get_text(post_id):
     response1 = requests.get(
         url=LOGIN_URL,
     )
-    # Post to login, it will modify response1's cookies!
-    requests.post(
+    # Post to login, remember the cookies.
+    response2 = requests.post(
         url=LOGIN_URL,
         data={
             'log': WORDPRESS_USERNAME,
@@ -63,8 +63,8 @@ def get_text(post_id):
     )
     # Get the post
     response3 = requests.get(
-        url=POST_URL.format(post_id=103),
-        cookies=response1.cookies,
+        url=POST_URL.format(post_id=post_id),
+        cookies=response2.cookies,
     )
     return response3.text
 
