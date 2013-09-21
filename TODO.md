@@ -3,28 +3,40 @@ Todo
 
 Album browser
 -------------
-    Librarypath
-    Do something smart when in library and unchecking the toggle
+    Navigation:
+        j down
+        k up
+        h parent
+        l toggle in / not in library
     Fileview:
         Next / previous, with shortcuts j and k. also moves to next-in-tree outside folder.
         Load next with ajax; slide with bootstrap; remove previous.
         Also: Changes url. Must be exactly same page compared to when loaded directly.
-    In library toggle with shortcut l.
-    exif info, or file properties if no exif.
-    If file is in library, it is checked.
-    Also, a small preview of the file in the library is shown
-    If not, it is unchecked.
-    If going to checked state, do ajax:
+
+    viewing a file in library:
+        - date picker
+        - description field
+        - l removes file from library and moves to next
+    viewing a file outside library that also exists in library:
+        - date picker
+        - description field
+        - preview
+        - l removes file from library
+    viewing a file outside library
+        - exif info, or file properties if no exif.
+        - l adds file to library
+
+    When a file is added to library:
         - Copy file to library
-        - Path yyyy/mm/dd/name.img (collision detection?)
+        - Path yyyy/mm/dd/filename
         - Date is from exif if possible, else modification date.
         - Create jsonfile:
             - description
             - date override for webalbum in isoformat. dateutil to parse. Datepicker.
             - keywords for partial album creation
-    If going to unchecked state, remove
-        - library file and meta file and empty directories from filesystem
-        - metatext and datepicker and thumbnail previewer
+    When a file is removed from library:
+        - Empty file and metafile and any empty directories
+
 
 Static site creator
 -------------------
