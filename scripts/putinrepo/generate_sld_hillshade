@@ -1,0 +1,30 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from __future__ import division
+
+import numpy as np
+import sys
+
+TEMPLATE = '<ColorMapEntry color="{}" quantity="{}" opacity="{}"/>\n'
+FLAT = 181
+
+
+def main():
+    quantity = range(256)
+    opacity = list(np.hstack([
+            np.ogrid[1:0:FLAT * 1j],
+            np.ogrid[0:1:(256 - FLAT) * 1j],
+    ]))
+    color = FLAT * ['#000000'] + (256 - FLAT) * ['#ffffff']
+
+    lines = [16 * ' ' + TEMPLATE.format(*t)
+             for t in zip(color, quantity, opacity)]
+
+    sys.stdout.write(''.join(lines))
+
+if __name__ == '__main__':
+    exit(main())

@@ -1,0 +1,33 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from __future__ import division
+
+
+import gdal
+import sys
+
+import numpy as np
+
+
+def dstest_single_path(path):
+    """ Test reading of a single dataset. """
+    print(20 * '-')
+    from arjan.monitor import Monitor; mon = Monitor() 
+    ds = gdal.Open(path)
+    mon.check('Open {}'.format(path)) 
+    data = ds.ReadAsArray()
+    mon.check('Read {}'.format(path)) 
+    
+
+def main():
+    """ Test reading of all commandline arguments. """
+    for path in sys.argv[1:]:
+        dstest_single_path(path)
+
+
+if __name__ == '__main__':
+    exit(main())

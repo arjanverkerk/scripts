@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+unzip -l $1 | grep asc$ | awk '{print "/vsizip/'$1'/" $4 }' | xargs gdal_merge.py -o ${1/.zip/.tif} -co COMPRESS=DEFLATE -co TILED=YES -ot Float32

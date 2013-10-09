@@ -1,0 +1,10 @@
+#!/usr/bin/python
+import sys
+import os
+
+with open(sys.argv[1]) as matchfile:
+    matchlines = matchfile.readlines()
+
+for line in sys.stdin:
+    if line not in matchlines:
+        sys.stdout.write(line)

@@ -1,0 +1,35 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from __future__ import division
+
+from matplotlib import colors
+from matplotlib import cm
+
+import numpy as np
+import sys
+
+TEMPLATE = '<ColorMapEntry color="{}" quantity="{}"/>\n'
+FLAT = 181
+
+
+def main():
+    base = np.logspace(1, 2.1)  # LogNorm requires positive numbers
+    sys.stderr.write('{} - {}'.format(base.min(), base.max()))
+    quantity = base - 20
+    normalize = colors.LogNorm()
+    #colormap = cm.gist_earth
+    colormap = cm.prism
+    color = map(colors.rgb2hex, colormap(normalize(base)))
+
+    lines = [16 * ' ' + TEMPLATE.format(*t)
+             for t in zip(color, quantity)]
+
+    sys.stdout.write(''.join(lines))
+
+
+if __name__ == '__main__':
+    exit(main())
