@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
@@ -45,7 +44,3 @@ def main():
     """ Call command with args from parser. """
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     command(**vars(get_parser().parse_args()))
-
-
-if __name__ == '__main__':
-    exit(main())
