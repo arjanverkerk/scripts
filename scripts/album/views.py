@@ -9,6 +9,8 @@ from scripts.album import config
 from scripts.album import meta
 from scripts.album import utils
 
+from scripts.gis import garmin
+
 from flask import views
 
 import flask
@@ -73,4 +75,6 @@ class FileView(views.MethodView):
 
     def get(self, relative_path):
         path = os.path.join(config.ROOT_DIR, relative_path)
+        if path.endswith('gar'):
+            return garmin.command(path)
         return self._data(path)
