@@ -10,6 +10,9 @@
     {% elif item.kind == "image" %}
       <i class="icon-picture"></i>
       <a href="/page{{ item.path }}">{{ item.name }}</a>
+    {% elif item.mime == "application/json" %}
+      <i class="icon-road"></i>
+      <a href="/page{{ item.path }}">{{ item.name }}</a>
     {% elif item.kind == "directory" %}
       <i class="icon-folder-close"></i>
       <a href="/page{{ item.path }}">{{ item.name }}</a>
@@ -21,6 +24,5 @@
   {% endfor %}
 
   </div> <!-- /container -->
-
 
 {% endblock %}

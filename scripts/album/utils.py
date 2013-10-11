@@ -27,6 +27,7 @@ def item(path, directory=False):
     else:
         result.update(mime=get_mime(path), meta=meta.load(path))
         result.update(kind=result['mime'].split('/')[0])
+        print(result)
     return result
 
 

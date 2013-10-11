@@ -46,6 +46,8 @@
         <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
         <a class="carousel-control right" href="#myCarousel" data-slide="next">&rsaquo;</a>
       </div>
+    {% elif item.mime == "application/json" %}
+      <div id="graph" style="width:640px; height:480px"/>
     {% else %}
       <p>Unsupported kind: {{ item.kind }}</p>
     {% endif %}
@@ -60,4 +62,20 @@
 <script src="/static/jeditable/jquery.jeditable.min.js"></script>
 <script src="/static/hotkeys/js/jquery.hotkeys.js"></script>
 <script src="/static/album/album.js"></script>
+{% if item.mime == "application/json" %}
+  <script type="text/javascript">
+    var plot = $.plot($("#graph"), [[[0,0],[10,10]]], {
+      xaxis: {
+        zoomRange: [0.1, 10],
+        panRange: [-10, 10]
+      },
+      yaxis: {
+        zoomRange: [0.1, 10],
+        panRange: [-10, 10]
+      },
+      zoom: {interactive: true},
+      pan: {interactive: true}
+    });
+  </script>
+{% endif %}
 {% endblock %}
