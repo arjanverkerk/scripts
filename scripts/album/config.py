@@ -15,6 +15,7 @@ MIME = {
     '.ogv': 'video/ogg',
     '.ogg': 'video/ogg',
     '.pdf': 'application/pdf',
+    '.gar': 'application/json',
 }
 
 # Paths

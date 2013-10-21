@@ -46,6 +46,8 @@
         <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
         <a class="carousel-control right" href="#myCarousel" data-slide="next">&rsaquo;</a>
       </div>
+    {% elif item.mime == "application/json" %}
+      <div id="placeholder" style="width:640px; height:480px"/>
     {% else %}
       <p>Unsupported kind: {{ item.kind }}</p>
     {% endif %}
@@ -60,4 +62,24 @@
 <script src="/static/jeditable/jquery.jeditable.min.js"></script>
 <script src="/static/hotkeys/js/jquery.hotkeys.js"></script>
 <script src="/static/album/album.js"></script>
+{% if item.mime == "application/json" %}
+  <script type="text/javascript">
+    function plot(data){
+      $.jqplot("placeholder", [data], {
+        cursor: { 
+          show: true,
+          zoom: true, 
+          showTooltip: true
+        },
+        series:[ 
+          {
+            showMarker: false
+          }
+        ]
+      });
+    }
+  var url = "/file{{item.path}}";
+  $.getJSON(url, plot);
+  </script>
+{% endif %}
 {% endblock %}
