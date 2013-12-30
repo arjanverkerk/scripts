@@ -8,6 +8,7 @@ from __future__ import division
 # These are in a separate module so that symlinks can be made automatically.
 scripts = [
     'album         = scripts.album.server:main',
+    'media         = scripts.media.server:main',
     'dbf2csv       = scripts.dbf2csv:main',
     'fz-mail       = scripts.fz.mail:main',
     'fz-pommo-move = scripts.fz.pommo_move:main',
