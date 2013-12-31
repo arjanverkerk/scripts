@@ -1,4 +1,3 @@
-function toggle(){
-  console.log('toggle');
-}
-$(document).on('keydown', null, 't', toggle);
+$(document).keydown(function(eventObject) {
+  console.log(eventObject.which);
+});
