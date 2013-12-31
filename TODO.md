@@ -1,6 +1,23 @@
 Todo
 ====
 
+Media viewer
+------------
+actions:
+j next
+k previous
+d edit description
+  delete
+  keywords
+
+display:
+- exif selection
+- description
+- keywords
+- location (can be the url)
+
+
+
 Album browser
 -------------
     Navigation:
