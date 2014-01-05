@@ -14,6 +14,14 @@ import sys
 logger = logging.getLogger(__name__)
 app = flask.Flask(__name__)
 
+# Content types
+MIME = {
+    '.jpg': 'image/jpeg',
+    '.ogv': 'video/ogg',
+}
+
+paths = None
+
 
 def get_parser():
     """ Return argument parser. """
@@ -22,14 +30,27 @@ def get_parser():
     )
     return parser
 
-
 @app.route('/')
-def page():
-    return flask.render_template('media/media.html')
+def main():
+    """ View first path. """
+    path = paths[0]
+    return page(path=path)
+
+@app.route('/<path:path>')
+def page(path):
+    """ View path. """
+    mime = 'this'
+
+    return flask.render_template(
+        'media/media.html',
+        path=path,
+        mime=mime,
+    )
 
 
 def command():
     """ Do something spectacular. """
+    global paths
     paths = [path.strip() for path in sys.stdin]
     app.run(host='0.0.0.0')
 
