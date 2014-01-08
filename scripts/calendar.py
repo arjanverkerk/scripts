@@ -61,7 +61,7 @@ def command(sourcepath, targetpath):
         time = record['tijd'].replace('.', ':').strip()
         dt1 = datetime.datetime.strptime(
             ' '.join([date, time]), '%d-%m %H:%M',
-        ).replace(year=2013)
+        ).replace(year=2014)
         dt2 = dt1 + datetime.timedelta(minutes=90)
 
         # Base data
@@ -73,17 +73,17 @@ def command(sourcepath, targetpath):
         }
 
         # Specific data
-        organ = record['Organist'].strip()
+        organ = record['organist'].strip()
         if organ:
             result.update({'Subject': 'Orgel {}'.format(organ)})
             writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
 
-        piano = record['Pianist'].strip()
+        piano = record['pianist'].strip()
         if piano:
             result.update({'Subject': 'Piano {}'.format(piano)})
             writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
 
-        team = record['Muz. Team'].replace('MT', '').strip()
+        team = record['MT'].replace('MT', '').strip()
         if team:
             result.update({'Subject': 'Muziekteam {}'.format(team)})
             writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
