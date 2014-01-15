@@ -38,12 +38,13 @@ def get_parser():
 
 def command():
     """ Do something spectacular. """
+    return 0
 
 
 def main():
     """ Call command with args from parser. """
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    command(**vars(get_parser().parse_args()))
+    return command(**vars(get_parser().parse_args()))
 '''
 
 RUNNER = '''
