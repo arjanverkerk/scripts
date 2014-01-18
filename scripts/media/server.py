@@ -20,7 +20,7 @@ MIME = {
     '.ogv': 'video/ogg',
 }
 
-paths = None
+files = None
 
 
 def get_parser():
@@ -28,16 +28,19 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="A simple webbased media viewer."
     )
+    parser.add_argument('file_paths', metavar='FILE', nargs='+')
     return parser
 
-@app.route('/')
-def main():
-    """ View first path. """
-    path = paths[0]
-    return page(path=path)
 
-@app.route('/<path:path>')
-def page(path):
+@app.route('/')
+def home():
+    """ View first path. """
+    location = files[0]
+    return flask.redirect(location)
+
+
+@app.route('/media/<path:path>')
+def media(path):
     """ View path. """
     mime = 'this'
 
@@ -48,10 +51,28 @@ def page(path):
     )
 
 
-def command():
+@app.route('/image/<path:path>')
+def image(path):
+    """ Return image html. """
+    return flask.render_template(
+        'media/image.html',
+        path=path,
+    )
+
+
+@app.route('/video/<path:path>')
+def video(path):
+    """ Return video html. """
+    return flask.render_template(
+        'media/video.html',
+        path=path,
+    )
+
+
+def command(file_paths):
     """ Do something spectacular. """
-    global paths
-    paths = [path.strip() for path in sys.stdin]
+    global files
+    files = file_paths
     app.run(host='0.0.0.0')
 
 
