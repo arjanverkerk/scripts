@@ -7,12 +7,15 @@
     <link rel="shortcut icon" href="">
   </head>
   <body>
-    path is {{ path }}
-    mime is {{ mime }}
+    <div id="meta">
+      <input type="text" placeholder="Description here">text</input>
+    </div>
     <div id="media" />
-    <input type="text" placeholder="Description here">text</input>
-    
     <script src="/static/jquery/jquery-1.10.2.min.js"></script>
     <script src="/static/media/media.js"></script>
+    <script type="text/javascript" >
+      var index = {{index}};
+      var length = {{length}};
+    </script>
   </body>
 </html>
