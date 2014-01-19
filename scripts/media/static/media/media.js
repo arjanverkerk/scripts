@@ -29,7 +29,7 @@ function update() {
   }
   // load
   $.get('html/' + index, function(data) {
-    $("#media").html(data);
+    $(".main").html(data);
   });
 }
 
