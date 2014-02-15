@@ -2,12 +2,8 @@
 
 import codecs
 import copy
-import ConfigParser
 import datetime
-import getpass
 import locale
-import os
-import requests
 import sys
 
 """
@@ -20,53 +16,13 @@ it in a template.
 from lxml import etree
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-# from jinja2.ext import loopcontrols
+
 locale.setlocale(locale.LC_TIME, 'nl_NL.UTF8')
 
 
-# Get config from local file on filesystem.
-configpath = os.path.join(os.environ['HOME'], '.fz')
-config = ConfigParser.ConfigParser()
-config.read(configpath)
-
-WORDPRESS_USERNAME = config.get('user', 'name')
-LOGIN_URL = config.get('login', 'url')
-REDIRECT_URL = config.get('redirect', 'url')
-POST_URL = config.get('post', 'url')
-
-
-def read_password():
-    """
-    Input password
-    """
-    password = getpass.getpass('Password for wordpress:')
-    return password
-
-
-def get_text(post_id):
-    """ Login in wordpress and get the post. """
-    # Get login page
-    response1 = requests.get(
-        url=LOGIN_URL,
-    )
-    # Post to login, remember the cookies.
-    response2 = requests.post(
-        url=LOGIN_URL,
-        data={
-            'log': WORDPRESS_USERNAME,
-            'pwd': read_password(),
-            'wp-submit': 'Log In',
-            'testcookie': '1',
-            'redirect_to': REDIRECT_URL,
-        },
-        cookies=response1.cookies,
-    )
-    # Get the post
-    response3 = requests.get(
-        url=POST_URL.format(post_id=post_id),
-        cookies=response2.cookies,
-    )
-    return response3.text
+def get_text(path):
+    with open(path) as html:
+        return html.read()
 
 
 def section_from_element(element):
@@ -99,15 +55,12 @@ def children_to_string(element):
 
 def main():
     """ Get the html and convert a little. """
-
-    post_id = sys.argv[1]
-
     template_path = '/home/arjan/Dropbox/usr/fz/templates'
     environment = Environment(loader=FileSystemLoader(template_path),
                               extensions=['jinja2.ext.loopcontrols'])
     template_mail = environment.get_template('mail2.html')
 
-    text = get_text(post_id)
+    text = get_text(sys.argv[1])
     xpath = '//section[@itemprop="articleBody"]'
     html = etree.HTML(text).xpath(xpath)[0]
 
