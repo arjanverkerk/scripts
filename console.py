@@ -15,6 +15,7 @@ scripts = [
     'gcalendar     = scripts.calendar:main',
     'gis-bbox      = scripts.gis.bbox:main',
     'gis-copy-proj = scripts.gis.copy_proj:main',
+    'gis-set-srs   = scripts.gis.set_srs:main',
     'gis-polygon   = scripts.gis.polygon:main',
     'gis-sum       = scripts.gis.sum:main',
     'ln_scripts    = scripts.link:main',
