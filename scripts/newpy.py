@@ -14,6 +14,7 @@ INTERPRETER = '''#!/usr/bin/python
 '''
 
 TEMPLATE = '''# -*- coding: utf-8 -*-
+""" TODO Docstring. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -30,14 +31,17 @@ logger = logging.getLogger(__name__)
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(
-        description=""
+        description=__doc__
     )
-    # Add arguments here.
+    # add arguments here
+    #parser.add_argument(
+        #'path',
+        #metavar='FILE',
+    #)
     return parser
 
 
 def command():
-    """ Do something spectacular. """
     return 0
 
 
