@@ -10,7 +10,7 @@ import os
 import argparse
 
 
-INTERPRETER = '''#!/usr/bin/python
+INTERPRETER = '''#!/usr/bin/env python
 '''
 
 TEMPLATE = '''# -*- coding: utf-8 -*-
