@@ -33,7 +33,6 @@ def get_names():
         yield name
 
 
-
 def action():
     """ Create symlinks for all console_scripts of scripts."""
     for name in get_names():
