@@ -15,7 +15,6 @@ install_requires = [
     'ipython',
     'markdown',
     'numpy',
-    'pelican',
     'Pillow',
     'requests',
     'scipy',
