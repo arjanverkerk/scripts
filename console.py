@@ -23,8 +23,4 @@ scripts = [
 commands = [
     'flake8',
     'ipython',
-    'pelican',
-    'pelican-import',
-    'pelican-quickstart',
-    'pelican-themes',
 ]
