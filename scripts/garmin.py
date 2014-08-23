@@ -12,6 +12,7 @@ import sys
 
 from ciso8601 import parse_datetime
 
+from pylab import gca
 from pylab import plot
 from pylab import show
 
@@ -58,10 +59,12 @@ def plot_garmin_path(path):
         except KeyError:
             continue
         time.append(parse_datetime(d['time']))
-    pace = [(dist[i] - dist[i - 1]) /
-            (time[i] - time[i - 1]).total_seconds()
+    pace = [(time[i] - time[i - 1]).total_seconds() /
+            (dist[i] - dist[i - 1]) * 1000 / 60
             for i in range(1, len(dist))]
     plot(dist[1:], pace)
+    axes = gca()
+    axes.set_ylim((3, 7))
     show()
 
 
