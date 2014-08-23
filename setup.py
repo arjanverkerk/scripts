@@ -9,6 +9,7 @@ install_requires = [
     'setuptools',
     # And the rest
     'blessings',
+    'ciso8601',
     'flake8',
     'h5py',
     'ipdb',

@@ -8,6 +8,7 @@ from __future__ import division
 # These are in a separate module so that symlinks can be made automatically.
 scripts = [
     'dbf2csv       = scripts.dbf2csv:main',
+    'garmin-graph  = scripts.garmin:main',
     'gcalendar     = scripts.calendar:main',
     'gis-bbox      = scripts.gis.bbox:main',
     'gis-copy-proj = scripts.gis.copy_proj:main',
