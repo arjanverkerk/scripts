@@ -60,11 +60,12 @@ def plot_garmin_path(path):
             continue
         time.append(parse_datetime(d['time']))
     pace = [(time[i] - time[i - 1]).total_seconds() /
-            (dist[i] - dist[i - 1]) * 1000 / 60
+            max(dist[i] - dist[i - 1], 0.1) * 1000 / 60
             for i in range(1, len(dist))]
     plot(dist[1:], pace)
     axes = gca()
     axes.set_ylim((3, 7))
+    print('Hacky way of avoiding divsion-by-zero!')
     show()
 
 
