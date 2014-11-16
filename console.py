@@ -7,17 +7,23 @@ from __future__ import division
 
 # These are in a separate module so that symlinks can be made automatically.
 scripts = [
-    'dbf2csv       = scripts.dbf2csv:main',
-    'garmin-graph  = scripts.garmin:main',
-    'gcalendar     = scripts.calendar:main',
-    'gis-bbox      = scripts.gis.bbox:main',
-    'gis-copy-proj = scripts.gis.copy_proj:main',
-    'gis-copy-ndv  = scripts.gis.copy_ndv:main',
-    'gis-set-srs   = scripts.gis.set_srs:main',
-    'gis-polygon   = scripts.gis.polygon:main',
-    'gis-sum       = scripts.gis.sum:main',
-    'ln_scripts    = scripts.link:main',
-    'newpy         = scripts.newpy:main',
+    # gis
+    'gis-bbox       = scripts.gis.bbox:main',
+    'gis-copy-proj  = scripts.gis.copy_proj:main',
+    'gis-copy-ndv   = scripts.gis.copy_ndv:main',
+    'gis-set-srs    = scripts.gis.set_srs:main',
+    'gis-polygon    = scripts.gis.polygon:main',
+    'gis-sum        = scripts.gis.sum:main',
+    # gallery
+    'gallery-titles = scripts.gallery.titles:main',
+    'gallery-media  = scripts.gallery.media:main',
+    'gallery-html   = scripts.gallery.html:main',
+    # various
+    'dbf2csv        = scripts.dbf2csv:main',
+    'garmin-graph   = scripts.garmin:main',
+    'gcalendar      = scripts.calendar:main',
+    'ln_scripts     = scripts.link:main',
+    'newpy          = scripts.newpy:main',
 ]
 
 # Some extra commands to symlink
