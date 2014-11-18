@@ -34,10 +34,10 @@ def get_parser():
         description=__doc__
     )
     # add arguments here
-    #parser.add_argument(
-        #'path',
-        #metavar='FILE',
-    #)
+    # parser.add_argument(
+    #     'path',
+    #     metavar='FILE',
+    # )
     return parser
 
 
@@ -50,7 +50,10 @@ def main():
     logging.basicConfig(stream=sys.stderr,
                         level=logging.DEBUG,
                         format='%(message)s')
-    return command(**vars(get_parser().parse_args()))
+    try:
+        return command(**vars(get_parser().parse_args()))
+    except:
+        logger.exception('An exception has occurred.')
 '''
 
 RUNNER = '''
