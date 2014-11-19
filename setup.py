@@ -17,6 +17,7 @@ install_requires = [
     'markdown',
     'numpy',
     'Pillow',
+    'pyinotify',
     'requests',
     'scipy',
 ]
