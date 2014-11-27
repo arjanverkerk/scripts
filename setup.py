@@ -18,6 +18,7 @@ install_requires = [
     'numpy',
     'Pillow',
     'pyinotify',
+    'redis',
     'requests',
     'scipy',
 ]
