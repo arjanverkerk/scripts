@@ -22,7 +22,7 @@ scripts = [
     'dbf2csv        = scripts.dbf2csv:main',
     'garmin-graph   = scripts.garmin:main',
     'gcalendar      = scripts.calendar:main',
-    'ln_scripts     = scripts.link:main',
+    'ln_scripts     = scripts.ln_scripts:main',
     'newpy          = scripts.newpy:main',
 ]
 

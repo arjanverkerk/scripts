@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+""" 
+Main reason to keep this doc is the implemantation of partial content
+using flask.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
