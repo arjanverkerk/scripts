@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-""" TODO Docstring. """
+"""
+Regenerates index.html files in the target folderassuming assets in the
+current directory. Regenerates the index page as well.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
