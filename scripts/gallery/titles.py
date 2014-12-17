@@ -13,9 +13,9 @@ import logging
 import os
 import sys
 
-logger = logging.getLogger(__name__)
+from scripts.gallery import common
 
-NAME = 'titles.json'
+logger = logging.getLogger(__name__)
 
 
 def get_parser():
@@ -33,7 +33,7 @@ def get_parser():
 
 def command(path):
     """ Update the titles file in folder path. """
-    titles_path = os.path.join(path, NAME)
+    titles_path = os.path.join(path, common.TITLES_NAME)
     tmp_path = '{}.in'.format(titles_path)
 
     # read
@@ -43,7 +43,8 @@ def command(path):
         original = {}
 
     # update
-    titles = {n: original.get(n, "") for n in os.listdir(path) if n != NAME}
+    titles = {n: original.get(n, "")
+              for n in os.listdir(path) if n != common.TITLES_NAME}
 
     # write
     with open(tmp_path, 'w') as tmp_file:
