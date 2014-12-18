@@ -52,6 +52,8 @@ def main():
                         format='%(message)s')
     try:
         return command(**vars(get_parser().parse_args()))
+    except SystemExit:
+        raise  # argparse does this
     except:
         logger.exception('An exception has occurred.')
 '''
