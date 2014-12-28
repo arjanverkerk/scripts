@@ -28,6 +28,10 @@ import sys
 logger = logging.getLogger(__name__)
 
 
+def command():
+    return 0
+
+
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(
@@ -41,19 +45,16 @@ def get_parser():
     return parser
 
 
-def command():
-    return 0
-
-
 def main():
     """ Call command with args from parser. """
+    kwargs = vars(get_parser().parse_args())
+
     logging.basicConfig(stream=sys.stderr,
                         level=logging.DEBUG,
                         format='%(message)s')
+
     try:
-        return command(**vars(get_parser().parse_args()))
-    except SystemExit:
-        raise  # argparse does this
+        return command(**kwargs)
     except:
         logger.exception('An exception has occurred.')
 '''
