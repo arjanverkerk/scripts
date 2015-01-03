@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """ 
-Main reason to keep this doc is the implemantation of partial content
+Main reason to keep this doc is the implementation of partial content
 using flask.
 """
 
