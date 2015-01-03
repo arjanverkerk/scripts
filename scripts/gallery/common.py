@@ -10,8 +10,24 @@ import os
 
 TITLES_NAME = 'titles.json'
 
+VIDEO_EXTENSIONS = (
+    'ogv',
+    'avi',
+    'mov',
+)
+IMAGE_EXTENSIONS = (
+    'jpeg',
+    'jpg',
+    'png',
+)
 
-class path_maker(object):
+
+class PathMaker(object):
+    """
+    Used to find target paths for media placement (absolute) and html
+    generation (relative).
+    """
+
     def __init__(self, target_dir, relative=True):
         if relative:
             self.target_dir = os.path.relpath(target_dir)
