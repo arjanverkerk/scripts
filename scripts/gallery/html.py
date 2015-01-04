@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Regenerates index.html files in the target folderassuming assets in the
-current directory. Regenerates the index page as well.
+Regenerates index.html files in the target folder assuming assets in
+the current directory. Regenerates the index page as well. It reads
+from the file structure of the target folder everything that is needed,
+including titles, thumbnails, posters, etc.
 """
 
 from __future__ import print_function
@@ -21,11 +23,6 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description=__doc__
     )
-    # add arguments here
-    #parser.add_argument(
-        #'path',
-        #metavar='FILE',
-    #)
     return parser
 
 

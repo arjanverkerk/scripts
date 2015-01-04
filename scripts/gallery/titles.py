@@ -3,6 +3,10 @@
 Create or update titles.json file for the files in the directory. Titles
 already present will be preserved. Titles for nonexisting files will
 be removed.
+
+TODO
+- compute and store sum to detect file changes
+- store the frame to dump as poster / thumbnail in videos
 """
 from __future__ import print_function
 from __future__ import unicode_literals

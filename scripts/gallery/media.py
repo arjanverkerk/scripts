@@ -15,12 +15,97 @@ import logging
 import os
 import sys
 
-from scripts.gallery import common
-
 logger = logging.getLogger(__name__)
 
-IMAGE_EXTENSIONS = ['.{}'.format(e) for e in common.IMAGE_EXTENSIONS]
-VIDEO_EXTENSIONS = ['.{}'.format(e) for e in common.VIDEO_EXTENSIONS]
+
+class Router(object):
+    """
+    Used to find target paths for media placement (absolute) and html
+    generation (relative).
+    """
+
+    def __init__(self, target_dir):
+        self.target = target_dir
+
+    def build(self, sub, root, ext):
+        return os.path.join(self.target, sub, '{}{}'.format(root, ext))
+
+    def image(self, root, ext):
+        return self.build('images', root, ext)
+
+    def config(self, root, ext):
+        return self.build('config', root, ext)
+
+    def video(self, root, ext):
+        return self.build('videos', root, '.ogv')
+
+    def poster(self, root, ext):
+        return self.build('posters', root, '.jpg')
+
+    def thumbnail(self, root, ext):
+        return self.build('thumbnails', root, '.jpg')
+
+
+class Processor(object):
+    videos = set([
+        '.ogv',
+        '.avi',
+        '.mov',
+        # '.sub',
+    ])
+    images = set([
+        '.jpeg',
+        '.jpg',
+        '.png',
+    ])
+
+    def __init__(self, target_dir):
+        self.router = Router(target_dir)
+
+    def process(self, base, root, ext):
+        if ext in self.images:
+            return self.image(base, root, ext)
+        if ext in self.videos:
+            return self.video(base, root, ext)
+        return self.config(base, root, ext)
+
+    def image(self, base, root, ext):
+        """
+        Create resized image and thumbnail.
+        """
+        image_path = self.router.image(root, ext)
+        thumbnail_path = self.router.thumbnail(root, ext)
+        print(image_path)
+        print(thumbnail_path)
+
+    def video(self, base, root, ext):
+        """
+        Create video formats, poster and thumbnail.
+        """
+        video_path = self.router.video(root, ext)
+        poster_path = self.router.poster(root, ext)
+        thumbnail_path = self.router.thumbnail(root, ext)
+        print(video_path)
+        print(poster_path)
+        print(thumbnail_path)
+
+    def config(self, base, root, ext):
+        """
+        Copy config file.
+        """
+        config_path = self.router.config(root, ext)
+        print(config_path)
+
+
+def command(source_dir, target_dir):
+    """
+    """
+    processor = Processor(target_dir)
+    for name in os.listdir(source_dir):
+        base = source_dir
+        root, ext = os.path.splitext(name)
+        processor.process(base, root, ext)
+    return 0
 
 
 def get_parser():
@@ -38,50 +123,6 @@ def get_parser():
         metavar='TARGET',
     )
     return parser
-
-
-# the converters
-def process_image(source_path, path_maker):
-    """
-    Create resized image and thumbnail.
-    """
-    source_name = os.path.basename(source_path)
-    image_path = path_maker.image(source_name)
-    thumbnail_path = path_maker.thumbnail(source_name)
-    print(image_path)
-    print(thumbnail_path)
-
-
-def process_video(source_path, path_maker):
-    """
-    Create video formats, poster and thumbnail.
-    """
-    source_name = os.path.basename(source_path)
-    image_path = path_maker.image(source_name)
-    poster_path = path_maker.poster(source_name)
-    thumbnail_path = path_maker.thumbnail(source_name)
-    print(image_path)
-    print(poster_path)
-    print(thumbnail_path)
-
-
-def command(source_dir, target_dir):
-    """
-    """
-    path_maker = common.PathMaker(target_dir)
-    for source_name in os.listdir(source_dir):
-        if source_name == common.TITLES_NAME:
-            continue
-        source_path = os.path.join(source_dir, source_name)
-        source_ext = os.path.splitext(source_name)[-1].lower()
-
-        # the conversions
-        if source_ext in IMAGE_EXTENSIONS:
-            process_image(source_path=source_path, path_maker=path_maker)
-        if source_ext in VIDEO_EXTENSIONS:
-            process_video(source_path=source_path, path_maker=path_maker)
-
-    return 0
 
 
 def main():
