@@ -15,8 +15,8 @@ scripts = [
     'gis-polygon    = scripts.gis.polygon:main',
     'gis-sum        = scripts.gis.sum:main',
     # gallery
-    'gallery-titles = scripts.gallery.titles:main',
     'gallery-media  = scripts.gallery.media:main',
+    'gallery-meta = scripts.gallery.meta:main',
     'gallery-html   = scripts.gallery.html:main',
     # various
     'dbf2csv        = scripts.dbf2csv:main',

@@ -37,25 +37,52 @@ def get_parser():
     return parser
 
 
+class Meta(object):
+    """
+    """
+    def __init__(path):
+        """ Initialize the data. """
+        self.path = path
+
+    def load(self):
+        path = os.path.join(self.path, common.META_NAME)
+        try:
+            data = json.load(open(self.meta_path))
+        except IOError:
+            data = {}
+        self.description = data.get('description', '')
+        self.titles = data.get('titles', {})
+        self.sums = data.get('sums', {})
+
+    def update(self, path):
+        """ 
+        list, see what titles are unknown
+        calc sums for new files
+        see if match by sum possible
+        """
+        pass
+    
+    def save(self):
+        """ Write. """
+        data = collections.OrderDict()
+        data['description'] = self.description
+        data['titles'] = self.titles
+        data['sums'] = self.sums
+        path = os.path.join(self.path, common.META_NAME)
+        tmp_path = '{}.in'.format(path)
+        with open(tmp_path, 'w') as tmp_file:
+            json.dump(data, tmp_file, indent=2)
+        os.rename(tmp_path, titles_path)
+
+
 def command(path):
     """ Update the titles file in folder path. """
-    titles_path = os.path.join(path, common.TITLES_NAME)
-    tmp_path = '{}.in'.format(titles_path)
-
-    # read
-    try:
-        original = json.load(open(titles_path))
-    except IOError:
-        original = {}
-
+    meta = Meta(path)
     # update
     titles = {n: original.get(n, "")
               for n in os.listdir(path) if n != common.TITLES_NAME}
 
     # write
-    with open(tmp_path, 'w') as tmp_file:
-        json.dump(titles, tmp_file, indent=2)
-    os.rename(tmp_path, titles_path)
 
     return 0
 
