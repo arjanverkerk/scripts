@@ -30,7 +30,6 @@ setup(
     author='Arjan Verkerk',
     author_email='arjan.verkerk@gmail.com',
     packages=['scripts'],
-    include_package_data = True,
     zip_safe = False,
     install_requires=install_requires,
     entry_points={'console_scripts': console.scripts},
