@@ -16,6 +16,7 @@ from __future__ import division
 import argparse
 import json
 import logging
+import hashlib
 import os
 import sys
 
@@ -45,9 +46,10 @@ class Meta(object):
         self.path = path
 
     def load(self):
+        """ Loads description, titles and sums. """
         path = os.path.join(self.path, common.META_NAME)
         try:
-            data = json.load(open(self.meta_path))
+            data = json.load(open(path))
         except IOError:
             data = {}
         self.description = data.get('description', '')
@@ -60,14 +62,36 @@ class Meta(object):
         calc sums for new files
         see if match by sum possible
         """
-        pass
-    
+        names = os.listdir(path)
+        names.remove(common.META_NAME)
+
+        for n in names:
+            if n not in self.sums:
+                s = haslib.md5(
+                    open(os.path.join(self.path, n)).read(),
+                ).hexdigest()
+                try:
+                    # using existing sum, move title 
+                    t = self.sums[s]
+                    self.titles[n] = self.titles[t]
+                    del self.titles[t]
+                except KeyError:
+                    # apparently a new file
+                    self.titles[n] = ''
+                finally:
+                    self.sums[s] = n
+        
+        # Now deal with removed files?
+        # titles = {n: self.original.get(n, "")
+                  # for n in os.listdir(path) if n != common.TITLES_NAME}
+
     def save(self):
         """ Write. """
-        data = collections.OrderDict()
+        data = collections.OrderedDict()
         data['description'] = self.description
-        data['titles'] = self.titles
+        data['titles'] = collections.ordereddict(sorted(self.titles.items))
         data['sums'] = self.sums
+        
         path = os.path.join(self.path, common.META_NAME)
         tmp_path = '{}.in'.format(path)
         with open(tmp_path, 'w') as tmp_file:
@@ -78,12 +102,8 @@ class Meta(object):
 def command(path):
     """ Update the titles file in folder path. """
     meta = Meta(path)
-    # update
-    titles = {n: original.get(n, "")
-              for n in os.listdir(path) if n != common.TITLES_NAME}
-
-    # write
-
+    meta.update()
+    meta.save()
     return 0
 
 
