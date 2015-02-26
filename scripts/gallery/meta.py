@@ -56,7 +56,7 @@ class Meta(object):
         self.titles = data.get('titles', {})
         self.checksums = data.get('checksums', {})
 
-    def update(self, path):
+    def update(self):
         """
         list, see what titles are unknown
         calc checksums for new files
@@ -64,7 +64,7 @@ class Meta(object):
         """
         checksums = {self.checksums[name]: name for name in self.checksums}
 
-        names = set(os.listdir(path))
+        names = set(os.listdir(self.path))
         try:
             names.remove(common.META_NAME)
         except KeyError:
@@ -73,19 +73,21 @@ class Meta(object):
         # handle new files
         create = names.difference(self.titles)
         for new in create:
+
+            logger.debug('Calculate checksum for {}'.format(new))
             checksum = hashlib.md5(
                 open(os.path.join(self.path, new)).read(),
             ).hexdigest()
             try:
                 # change name for existing title
-                update = checksums[checksum]
-                self.titles[create] = self.titles[update]
-                del self.titles[update]
+                old = checksums[checksum]
+                self.titles[new] = self.titles[old]
+                del self.titles[old]
             except KeyError:
                 # add new name with dummy title
-                self.titles[create] = ''
+                self.titles[new] = ''
             finally:
-                self.checksums[create] = checksum
+                self.checksums[new] = checksum
 
         # now use the possibly changed titles to detect deleted files
         delete = set(self.titles).difference(names)
@@ -99,7 +101,7 @@ class Meta(object):
         data['description'] = self.description
 
         # sorted dicts for titles and checksums
-        sorted_dict = lambda d: collections.ordereddict(sorted(d.items))
+        sorted_dict = lambda d: collections.OrderedDict(sorted(d.items()))
 
         data['titles'] = sorted_dict(self.titles)
         data['checksums'] = sorted_dict(self.checksums)
@@ -115,6 +117,7 @@ class Meta(object):
 def command(path):
     """ Update the titles file in folder path. """
     meta = Meta(path)
+    meta.load()
     meta.update()
     meta.save()
     return 0
@@ -122,7 +125,13 @@ def command(path):
 
 def main():
     """ Call command with args from parser. """
+    kwargs = vars(get_parser().parse_args())
+
     logging.basicConfig(stream=sys.stderr,
                         level=logging.DEBUG,
                         format='%(message)s')
-    return command(**vars(get_parser().parse_args()))
+
+    try:
+        return command(**kwargs)
+    except:
+        logger.exception('An exception has occurred.')
