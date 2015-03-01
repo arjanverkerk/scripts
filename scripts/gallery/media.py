@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copy and / or convert media files from source to target folder. Skip
-media if target exists, but allways update titles in target folder. So,
-always update any missing file, be it a thumbnail or a converted video.
+Create media files
 """
 
 from __future__ import print_function
@@ -14,6 +12,10 @@ import argparse
 import logging
 import os
 import sys
+
+from scripts.gallery import common
+
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +32,20 @@ class Router(object):
     def build(self, sub, root, ext):
         return os.path.join(self.target, sub, '{}{}'.format(root, ext))
 
-    def image(self, root, ext):
-        return self.build('images', root, ext)
-
     def config(self, root, ext):
         return self.build('config', root, ext)
 
+    def image(self, root, ext):
+        return self.build(common.IMAGES, root, ext)
+
     def video(self, root, ext):
-        return self.build('videos', root, '.ogv')
+        return self.build(common.VIDEOS, root, '.ogv')
 
     def poster(self, root, ext):
-        return self.build('posters', root, '.jpg')
+        return self.build(common.POSTERS, root, '.jpg')
 
     def thumbnail(self, root, ext):
-        return self.build('thumbnails', root, '.jpg')
+        return self.build(common.THUMBNAILS, root, '.jpg')
 
 
 class Processor(object):
@@ -59,13 +61,29 @@ class Processor(object):
         '.png',
     ])
 
+    folders = (common.IMAGES,
+               common.VIDEOS,
+               common.POSTERS,
+               common.THUMBNAILS)
+
+    width = 1024
+    height = 768
+
     def __init__(self, target_dir):
+        """ Create folders and a router. """
+        # create folders
+        for folder in self.folders:
+            try:
+                os.makedirs(os.path.join(target_dir, folder))
+            except OSError:
+                pass  # it exists
+
         self.router = Router(target_dir)
 
     def process(self, base, root, ext):
-        if ext in self.images:
+        if ext.lower() in self.images:
             return self.image(base, root, ext)
-        if ext in self.videos:
+        if ext.lower() in self.videos:
             return self.video(base, root, ext)
         return self.config(base, root, ext)
 
@@ -73,10 +91,29 @@ class Processor(object):
         """
         Create resized image and thumbnail.
         """
+        source_path = os.path.join(base, root + ext)
         image_path = self.router.image(root, ext)
         thumbnail_path = self.router.thumbnail(root, ext)
-        print(image_path)
-        print(thumbnail_path)
+
+        source = Image.open(source_path)
+        width, height = source.size
+        resample = Image.ANTIALIAS
+
+        # image
+        logger.debug('Create image {}'.format(image_path))
+        image_ratio = min(self.width / width, self.height / height)
+        image_size = (int(width * image_ratio),
+                      int(height * image_ratio))
+        image = source.resize(image_size, resample)
+        image.save(image_path)
+
+        # thumbnail
+        logger.debug('Create thumbnail {}'.format(thumbnail_path))
+        thumbnail_ratio = image_ratio / 8
+        thumbnail_size = (int(width * thumbnail_ratio),
+                          int(height * thumbnail_ratio))
+        thumbnail = image.resize(thumbnail_size, resample)
+        thumbnail.save(thumbnail_path)
 
     def video(self, base, root, ext):
         """
