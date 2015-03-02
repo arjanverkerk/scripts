@@ -85,7 +85,7 @@ class Meta(object):
                 del self.titles[old]
             except KeyError:
                 # add new name with dummy title
-                self.titles[new] = ''
+                self.titles[new] = new
             finally:
                 self.checksums[new] = checksum
 
