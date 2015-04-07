@@ -5,10 +5,13 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 
+import itertools
+import Queue as queue
+import random
 import re
 import redis
-import threading
 import time
+import threading
 
 from .core import Keys
 from .core import Turner
@@ -18,7 +21,7 @@ def follow(resources, *args, **kwargs):
     pass
 
 
-def report_resource(client, resource):
+def status_resource(client, resource):
     """ Print a report about resource. """
     keys = Keys(resource)
     substr = keys.serial('')
@@ -36,7 +39,7 @@ def report_resource(client, resource):
         print('{}: {}'.format(key.replace(substr, ''), client.get(key)))
 
 
-def report_general(client):
+def status_general(client):
     """ Print general report. """
     # find resources
     pattern = Keys.DISPENSER.format('*')
@@ -56,41 +59,57 @@ def report_general(client):
                               '({})'.format(indicator)))
 
 
-def report(resources, *args, **kwargs):
+def status(resources, *args, **kwargs):
     client = redis.Redis(**kwargs)
     if resources:
-        return report_resource(client=client, resource=resources[0])
-    return report_general(client)
+        return status_resource(client=client, resource=resources[0])
+    return status_general(client)
 
 
-def single(resource, sleep, label, *args, **kwargs):
-    """ Test a single locking sequence. """
-    turner = Turner(**kwargs)
-    with turner.lock(resource=resource, label=label, expire=2):
-        time.sleep(sleep)
-        print(label)
+def target(turner, periods, resource):
+    """ Test target. """
+    for serial in itertools.count():
+        label = 'task{}'.format(serial)
+        period = periods.get()
+        if period is None:
+            break
+        print('{}, {}: Acquiring...'.format(resource, label))
+        with turner.lock(resource=resource, label=label, expire=2):
+            print('{}, {}: Working {} s'.format(resource, label, period))
+            time.sleep(period)
+        print('{}, {}: Complete.'.format(resource, label))
 
 
 def test(resources, *args, **kwargs):
-    if test:
-        period = 2
-        multiargs = [
-            ['resource1', period, 'Task1.1'],
-            ['resource1', period, 'Task1.2'],
-            ['resource1', period, 'Task1.3'],
-            ['resource1', period, 'Task1.4'],
-            ['resource2', period, 'Task2.1'],
-            ['resource2', period, 'Task2.2'],
-            ['resource2', period, 'Task3.3'],
-            ['resource3', period, 'Task3.1'],
-            ['resource3', period, 'Task3.2'],
-            ['resource4', period, 'Task4.1'],
-        ]
-        threads = []
-        for args in multiargs:
-            thread = threading.Thread(target=single, args=args, kwargs=kwargs)
-            thread.start()
-            threads.append(thread)
-        for thread in threads:
-            thread.join()
-        return 0
+    """ Indefinitely add jobs to turner. """
+    # launch threads
+    queues, threads = [], []
+
+    for resource in resources:
+        turner = Turner(*args, **kwargs)
+
+        periods = queue.Queue()
+        queues.append(periods)
+
+        target_kwargs = {'turner': turner,
+                         'periods': periods,
+                         'resource': resource}
+        thread = threading.Thread(target=target, kwargs=target_kwargs)
+        thread.start()
+        threads.append(thread)
+
+    # queues with periods until ctrl-c
+    try:
+        while True:
+            for periods in queues:
+                periods.put(max(0, random.gauss(0.9, 0.5)))
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        pass
+
+    for periods in queues:
+        periods.put(None)
+
+    for thread in threads:
+        thread.join()
+    return 0

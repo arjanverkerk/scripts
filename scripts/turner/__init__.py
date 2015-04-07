@@ -52,7 +52,7 @@ def get_parser():
     )
     parser.add_argument(
         'command',
-        choices=('test', 'follow', 'report'),
+        choices=('test', 'follow', 'status'),
 
     )
     parser.add_argument(
