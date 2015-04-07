@@ -8,8 +8,6 @@ version='0.1'
 install_requires = [
     'setuptools',
     # And the rest
-    'blessings',
-    'ciso8601',
     'flake8',
     'h5py',
     'ipdb',
@@ -17,7 +15,6 @@ install_requires = [
     'markdown',
     'numpy',
     'Pillow',
-    'pyinotify',
     'redis',
     'requests',
     'scipy',
