@@ -5,8 +5,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 
-import itertools
-import Queue as queue
+import Queue as queueing
 import random
 import re
 import redis
@@ -66,49 +65,46 @@ def status(resources, *args, **kwargs):
     return status_general(client)
 
 
-def target(turner, periods, resource):
-    """ Test target. """
-    for serial in itertools.count():
-        label = 'task{}'.format(serial)
-        period = periods.get()
-        if period is None:
-            break
-        print('{}, {}: Acquiring...'.format(resource, label))
-        with turner.lock(resource=resource, label=label, expire=2):
-            print('{}, {}: Working {} s'.format(resource, label, period))
-            time.sleep(period)
-        print('{}, {}: Complete.'.format(resource, label))
-
-
 def test(resources, *args, **kwargs):
-    """ Indefinitely add jobs to turner. """
+    """
+    Indefinitely add jobs to turner.
+    """
+    # target for the test threads
+    def target(queue, turner):
+        """
+        Test thread target.
+        """
+        while True:
+            # pick tasks from queue
+            try:
+                resource, period = queue.get()
+            except TypeError:
+                break
+            label = 'Work for {:.2f} s'.format(period)
+            # execue
+            with turner.lock(resource=resource, label=label, expire=2):
+                time.sleep(period)
+
     # launch threads
-    queues, threads = [], []
-
+    threads = []
+    queue = queueing.Queue(maxsize=1)
     for resource in resources:
-        turner = Turner(*args, **kwargs)
-
-        periods = queue.Queue()
-        queues.append(periods)
-
-        target_kwargs = {'turner': turner,
-                         'periods': periods,
-                         'resource': resource}
-        thread = threading.Thread(target=target, kwargs=target_kwargs)
+        thread = threading.Thread(
+            target=target,
+            kwargs={'queue': queue, 'turner': Turner(*args, **kwargs)},
+        )
         thread.start()
         threads.append(thread)
 
-    # queues with periods until ctrl-c
     try:
         while True:
-            for periods in queues:
-                periods.put(max(0, random.gauss(0.9, 0.5)))
-            time.sleep(0.5)
+            queue.put((random.choice(resources),
+                       max(0, random.gauss(0.1, 0.1))))
     except KeyboardInterrupt:
         pass
 
-    for periods in queues:
-        periods.put(None)
+    for thread in threads:
+        queue.put(None)
 
     for thread in threads:
         thread.join()
