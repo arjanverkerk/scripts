@@ -25,6 +25,11 @@ The state of users and queues can be monitered by inspection of redis
 values and subscription to redis channels.
 
 TODO
+- make reset publish to notify active workers
+- make bump do resets and detect mishaps and publish accordingly
+- add general and resource publications
+- implement follow to follow those
+
 ----
 """
 
@@ -52,7 +57,7 @@ def get_parser():
     )
     parser.add_argument(
         'command',
-        choices=('test', 'follow', 'status'),
+        choices=('test', 'follow', 'reset', 'status'),
 
     )
     parser.add_argument(

@@ -13,7 +13,7 @@ import threading
 import redis
 
 PATIENCE = 1      # time in queue before bumping
-PREFIX = 'turno'  # prefix for all redis keys
+PREFIX = 'turner'  # prefix for all redis keys
 
 
 class Keys(object):
