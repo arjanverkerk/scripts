@@ -98,7 +98,6 @@ class Server(object):
                               sorted(kwargs.items()))).hexdigest()
 
         if key not in self.cache:
-            print('new redis')
             self.cache[key] = redis.Redis(*args, **kwargs)
 
         self.client = self.cache[key]
