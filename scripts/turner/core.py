@@ -61,6 +61,9 @@ class Channel(object):
             return None
         return self.pubsub.get_message()
 
+    def close(self):
+        self.pubsub.close()
+
 
 class Keeper(object):
     def __init__(self, **kwargs):
@@ -95,6 +98,7 @@ class Server(object):
                               sorted(kwargs.items()))).hexdigest()
 
         if key not in self.cache:
+            print('new redis')
             self.cache[key] = redis.Redis(*args, **kwargs)
 
         self.client = self.cache[key]
@@ -188,5 +192,6 @@ class Turner(object):
             change = keys.change(serial)
             client.publish(keys.channel1, change)
 
-            # dismiss keeper
+            # close things
             keeper.close()
+            channel.close()
