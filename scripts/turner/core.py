@@ -7,6 +7,7 @@ from __future__ import division
 
 import contextlib
 import hashlib
+import re
 import select
 import threading
 
@@ -17,43 +18,45 @@ PREFIX = 'turner'  # prefix for all redis keys
 
 
 class Keys(object):
+    """ Key generation for redis. """
     # values
     DISPENSER = '{}:{{}}:dispenser'.format(PREFIX)
     INDICATOR = '{}:{{}}:indicator'.format(PREFIX)
-    SERIAL = '{}:{{}}:serial:{{}}'.format(PREFIX)
+    NUMBER = '{}:{{}}:serial:{{}}'.format(PREFIX)  # used as message, too
 
     # channels
-    CHANNEL1 = '{}:{{}}:channel1'.format(PREFIX)
-    CHANNEL2 = '{}:{{}}:channel2'.format(PREFIX)
-
-    # messages
-    CHANGE = '{}:{{}}:change:{{}}'.format(PREFIX)
+    INTERNAL = '{}:{{}}:internal'.format(PREFIX)
+    EXTERNAL = '{}:{{}}:external'.format(PREFIX)
 
     def __init__(self, resource):
         self.resource = resource
-        self.channel1 = self.CHANNEL1.format(resource)
-        self.channel2 = self.CHANNEL2.format(resource)
+        self.internal = self.INTERNAL.format(resource)
+        self.external = self.EXTERNAL.format(resource)
         self.dispenser = self.DISPENSER.format(resource)
         self.indicator = self.INDICATOR.format(resource)
 
-    def serial(self, serial):
-        return self.SERIAL.format(self.resource, serial)
+        self.pattern = re.compile(self.NUMBER.format(self.resource, '(.*)'))
 
-    def change(self, serial):
-        return self.CHANGE.format(self.resource, serial + 1)
+    def key(self, number):
+        """ Return key for a number. """
+        return self.NUMBER.format(self.resource, number)
+
+    def number(self, key):
+        """ Return number for a key. """
+        return int(self.pattern.match(key).group(1))
 
 
-class Channel(object):
+class Subscription(object):
     def __init__(self, client, channel):
         """ Subscribe and receive subscription message. """
         self.pubsub = client.pubsub()
         self.pubsub.subscribe(channel)
         self.pubsub.get_message()
 
-    def listen(self, timeout):
+    def listen(self):
         """
         redis-py master branch supports timeout in pubsub.get_message()
-        but until it gets released select.select is used
+        but until it gets released select.select is used.
         """
         socket = self.pubsub.connection._sock
         rlist, wlist, xlist = select.select([socket], [], [], PATIENCE)
@@ -66,14 +69,15 @@ class Channel(object):
 
 
 class Keeper(object):
+    """ Keeps key-value pair alive in redis. """
     def __init__(self, **kwargs):
         self.thread = threading.Thread(target=self.target, kwargs=kwargs)
         self.leave = threading.Event()
         self.thread.start()
 
-    def target(self, client, key, value, expire):
+    def target(self, client, key, label, expire):
         # set key signaling this number is active
-        client.set(key, value, ex=expire)
+        client.set(key, label, ex=expire)
 
         # keep key alive
         while not self.leave.wait(timeout=expire - 1):
@@ -88,7 +92,90 @@ class Keeper(object):
         self.thread.join()
 
 
-class Server(object):
+class Queue(object):
+    """ Server initialized for specific resource. """
+    def __init__(self, client, resource):
+        self.client = client
+        self.resource = resource
+        self.keys = Keys(resource)
+
+    @contextlib.contextmanager
+    def draw(self, **kwargs):
+        """
+        Return a Serial number for this resource queue, after bootstrapping.
+        """
+        # get next number
+        with self.client.pipeline() as pipe:
+            pipe.msetnx({self.keys.dispenser: 0, self.keys.indicator: 1})
+            pipe.incr(self.keys.dispenser)
+            number = pipe.execute()[-1]
+
+        # launch keeper
+        kwargs.update(client=self.client, key=self.keys.key(number))
+        keeper = Keeper(**kwargs)
+
+        # yield number
+        yield number
+
+        # close keeper
+        keeper.close()
+
+    def wait(self, number):
+        """ Waits and resets if necessary. """
+        # quick out if match
+        if int(self.client.get(self.keys.indicator)) == number:
+            return
+
+        # subscribe to internal
+        subscription = Subscription(client=self.client,
+                                    channel=self.keys.internal)
+
+        while True:
+            message = subscription.listen()
+            if message is None:
+                self.repair()
+                continue
+            try:
+                indicator = self.keys.number(message['data'])
+            except TypeError:
+                continue
+            if indicator == 0:
+                raise ValueError('Indicator is being reset!')
+            if indicator == number:
+                return
+
+    def leave(self):
+        """ Increase and announce. """
+        number = self.client.incr(self.keys.indicator)
+        message = self.keys.key(number)
+        self.client.publish(self.keys.internal, message)
+
+    def repair(self):
+        """ """
+        # read client
+        indicator, dispenser = map(int,
+                                   self.client.mget(self.keys.indicator,
+                                                    self.keys.dispenser))
+
+        # determine active users
+        numbers = xrange(indicator, dispenser + 1)
+        keys = map(self.keys.key, numbers)
+        pairs = zip(keys, self.client.mget(*keys))
+
+        # determine number of first active user
+        number = next(self.keys.number(key)
+                      for key, value in pairs if value is not None)
+
+        # set indicator to it if necessary
+        if number != indicator:
+            self.client.set(self.keys.indicator, number)
+
+        # announce it anyways
+        message = self.keys.key(number)
+        self.client.publish(self.keys.internal, message)
+
+
+class Turner(object):
     """ Wraps a redis server. """
     cache = {}
 
@@ -102,48 +189,6 @@ class Server(object):
 
         self.client = self.cache[key]
 
-    def bump(self, keys):
-        """
-        Resolve a possible lockup by appropriately bumping indicator.
-
-        :param keys: Keys
-
-        This should only be used in case of anomalies.
-        """
-        # read redis
-        client = self.client
-        indicator = int(client.get(keys.indicator))
-        dispenser = int(client.get(keys.dispenser))
-
-        # determine active users
-        func = lambda n: client.get(keys.serial(n))
-        numbers = xrange(indicator, dispenser + 1)
-        active = filter(func, numbers)
-        first = active[0]
-
-        # leave if things look ok
-        if first == indicator:
-            return
-
-        # set indicator and announce change
-        client.set(keys.indicator, first)
-        change = keys.change(first)
-        client.publish(keys.channel1, change)
-
-    def channel(self, channel):
-        """ Return a pubsub channel. """
-        return Channel(client=self.client, channel=channel)
-
-    def keeper(self, key, value, expire):
-        """ Maintain a value for given resource and number. """
-        return Keeper(client=self.client, key=key, value=value, expire=expire)
-
-
-class Turner(object):
-
-    def __init__(self, *args, **kwargs):
-        self.server = Server(*args, **kwargs)
-
     @contextlib.contextmanager
     def lock(self, resource, label='', expire=60):
         """
@@ -153,44 +198,8 @@ class Turner(object):
         :param label: String label to attach
         :param expire: int seconds
         """
-        # bootstrap the indicator if necessary
-        keys = Keys(resource)
-        server = self.server
-        client = server.client
-        client.setnx(keys.indicator, 1)
-
-        # draw a number
-        serial = client.incr(keys.dispenser)
-
-        # keeper to keep value alive in server
-        key = keys.serial(serial)
-        keeper = server.keeper(key=key, value=label, expire=expire)
-
-        # subscribe to the channel corresponding to resource
-        channel = server.channel(keys.channel1)
-
-        while True:
-            # read indicator
-            indicator = int(client.get(keys.indicator))
-
-            # it's our turn now
-            if serial == indicator:
-                break
-
-            message = channel.listen(timeout=PATIENCE)
-            if not message:
-                server.bump(keys)
-
-        try:
-            yield  # caller may now use resource
-        except Exception as exception:
-            raise exception
-        finally:
-            # advance and announce indicator value
-            serial = client.incr(keys.indicator)
-            change = keys.change(serial)
-            client.publish(keys.channel1, change)
-
-            # close things
-            keeper.close()
-            channel.close()
+        queue = Queue(client=self.client, resource=resource)
+        with queue.draw(label=label, expire=expire) as serial:
+            queue.wait(serial)
+            yield
+            queue.leave()

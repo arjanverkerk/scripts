@@ -36,6 +36,14 @@ def follow(resources, *args, **kwargs):
 
 
 def reset(resources, *args, **kwargs):
+    """
+    Resetting:
+        watch the dispenser (someone enters)
+        get the state of dispenser and indicator
+        if system is idle, reset all to none
+
+        abort when a number is drawn during the transaction.
+    """
     """ Remove dispensers and indicators for a resource. """
     # TODO publish it so that clients can disconnect.
     client = redis.Redis(**kwargs)
@@ -62,8 +70,7 @@ def status(resources, *args, **kwargs):
 
         # strings needed
         keys = Keys(resource)
-        pattern = re.compile(keys.serial('(.*)'))
-        wildcard = keys.serial('*')
+        wildcard = keys.key('*')
 
         # header
         template = '{:<50}{:>10}'
@@ -72,11 +79,10 @@ def status(resources, *args, **kwargs):
         print(SEPARATOR)
 
         # body
-        serials = sorted([pattern.match(key).group(1)
-                          for key in client.keys(wildcard)], key=int)
-        for serial in serials:
-            label = client.get(keys.serial(serial))
-            print(template.format(label, serial))
+        numbers = sorted([keys.number(key) for key in client.keys(wildcard)])
+        for number in numbers:
+            label = client.get(keys.key(number))
+            print(template.format(label, number))
 
     if resources:
         return
@@ -94,7 +100,7 @@ def status(resources, *args, **kwargs):
     # print sorted results
     print(template.format('Resource', 'Size'))
     print(SEPARATOR)
-    for resource, size in sorted(zip(sizes, resources), reverse=True):
+    for size, resource in sorted(zip(sizes, resources), reverse=True):
         print(template.format(resource, size))
 
 
