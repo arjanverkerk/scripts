@@ -17,6 +17,7 @@ import time
 import threading
 
 from .core import Keys
+from .core import Subscription
 from .core import Turner
 
 SEPARATOR = 60 * '-'
@@ -32,12 +33,30 @@ def find_resources(client):
 
 # tools
 def follow(resources, *args, **kwargs):
-    pass
+    """ Follow publications involved with resources. """
+    client = redis.Redis(**kwargs)
+    channels = []
+    for resource in resources:
+        keys = Keys(resource)
+        channels.append(keys.internal)
+        channels.append(keys.external)
+        subscription = Subscription(client, *channels)
+
+    if not channels:
+        return
+
+    while True:
+        try:
+            message = subscription.listen()
+            if message['type'] == 'message':
+                print(message['data'])
+        except KeyboardInterrupt:
+            break
 
 
 def reset(resources, *args, **kwargs):
     """
-    Resetting:
+    Resetting the safe way:
         watch the dispenser (someone enters)
         get the state of dispenser and indicator
         if system is idle, reset all to none

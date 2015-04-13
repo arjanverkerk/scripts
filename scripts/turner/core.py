@@ -47,19 +47,19 @@ class Keys(object):
 
 
 class Subscription(object):
-    def __init__(self, client, channel):
+    def __init__(self, client, *channels):
         """ Subscribe and receive subscription message. """
         self.pubsub = client.pubsub()
-        self.pubsub.subscribe(channel)
+        self.pubsub.subscribe(*channels)
         self.pubsub.get_message()
 
-    def listen(self):
+    def listen(self, timeout=None):
         """
         redis-py master branch supports timeout in pubsub.get_message()
         but until it gets released select.select is used.
         """
         socket = self.pubsub.connection._sock
-        rlist, wlist, xlist = select.select([socket], [], [], PATIENCE)
+        rlist, wlist, xlist = select.select([socket], [], [], timeout)
         if not rlist:
             return None
         return self.pubsub.get_message()
@@ -98,9 +98,10 @@ class Queue(object):
         self.client = client
         self.resource = resource
         self.keys = Keys(resource)
+        self.subscription = Subscription(client, self.keys.internal)
 
     @contextlib.contextmanager
-    def draw(self, **kwargs):
+    def draw(self, label, expire):
         """
         Return a Serial number for this resource queue, after bootstrapping.
         """
@@ -111,8 +112,13 @@ class Queue(object):
             number = pipe.execute()[-1]
 
         # launch keeper
-        kwargs.update(client=self.client, key=self.keys.key(number))
-        keeper = Keeper(**kwargs)
+        kwargs = {'client': self.client, 'key': self.keys.key(number)}
+        keeper = Keeper(label=label, expire=expire, **kwargs)
+
+        self.client.publish(
+            self.keys.external,
+            '"{}" draws {} for "{}"'.format(label, number, self.resource),
+        )
 
         # yield number
         yield number
@@ -126,32 +132,37 @@ class Queue(object):
         if int(self.client.get(self.keys.indicator)) == number:
             return
 
-        # subscribe to internal
-        subscription = Subscription(client=self.client,
-                                    channel=self.keys.internal)
-
+        # wait until someone announces our number
         while True:
-            message = subscription.listen()
+            message = self.subscription.listen(PATIENCE)
             if message is None:
+                # timeout beyond patience, repair and try again
                 self.repair()
                 continue
-            try:
-                indicator = self.keys.number(message['data'])
-            except TypeError:
-                continue
-            if indicator == 0:
-                raise ValueError('Indicator is being reset!')
-            if indicator == number:
-                return
+            if message['type'] != 'message':
+                continue  # a subscribe message
+
+            if self.keys.number(message['data']) == number:
+                return  # it's our turn now
 
     def leave(self):
         """ Increase and announce. """
         number = self.client.incr(self.keys.indicator)
-        message = self.keys.key(number)
-        self.client.publish(self.keys.internal, message)
+        self.announce(number)
+
+    def announce(self, number):
+        """ Announce an indicator change on both channels. """
+        self.client.publish(
+            self.keys.internal,
+            self.keys.key(number),
+        )
+        self.client.publish(
+            self.keys.external,
+            '{} allowed to "{}"'.format(number, self.resource),
+        )
 
     def repair(self):
-        """ """
+        """ Repair in case of crashed users. """
         # read client
         indicator, dispenser = map(int,
                                    self.client.mget(self.keys.indicator,
@@ -171,8 +182,7 @@ class Queue(object):
             self.client.set(self.keys.indicator, number)
 
         # announce it anyways
-        message = self.keys.key(number)
-        self.client.publish(self.keys.internal, message)
+        self.announce(number)
 
 
 class Turner(object):
@@ -199,7 +209,7 @@ class Turner(object):
         :param expire: int seconds
         """
         queue = Queue(client=self.client, resource=resource)
-        with queue.draw(label=label, expire=expire) as serial:
-            queue.wait(serial)
+        with queue.draw(label=label, expire=expire) as number:
+            queue.wait(number)
             yield
             queue.leave()
