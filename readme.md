@@ -18,7 +18,7 @@ Basic usage goes like this:
 from scripts import turn
 server = turn.Server()
 
-resource = 'my_valueable_resource'
+resource = 'my_valuable_resource'
 label = 'This shows up in status reports and messages.'
 
 with server.lock(resource=resource, label=label):
