@@ -26,7 +26,7 @@ scripts = [
     'gcalendar     = scripts.calendar:main',
     'ln_scripts    = scripts.ln_scripts:main',
     'newpy         = scripts.newpy:main',
-    'turner        = scripts.turner:main',
+    'turn          = scripts.turn:main',
 ]
 
 # Some extra commands to symlink

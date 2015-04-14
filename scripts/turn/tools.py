@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 This module provides a number of (commandline) tools to manipulate or
-question the state of the turner system.
+question the state of the turn system.
 """
 
 from __future__ import print_function

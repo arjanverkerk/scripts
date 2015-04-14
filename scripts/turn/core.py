@@ -14,7 +14,7 @@ import threading
 import redis
 
 PATIENCE = 60000   # time in milliseconds in queue before asking for repairs
-PREFIX = 'turner'  # prefix for all redis keys
+PREFIX = 'turn'  # prefix for all redis keys
 
 
 class Keys(object):
