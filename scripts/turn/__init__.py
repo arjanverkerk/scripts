@@ -48,6 +48,13 @@ def get_parser():
         formatter_class=argparse.RawTextHelpFormatter,
         description=__doc__,
     )
+
+    # server
+    parser.add_argument('--host', default='localhost')
+    parser.add_argument('--port', default=6379, type=int)
+    parser.add_argument('--db', default=0, type=int)
+
+    # tools
     parser.add_argument(
         'command',
         choices=('test', 'follow', 'reset', 'status'),
@@ -59,7 +66,7 @@ def get_parser():
         metavar='RESOURCE',
         help='Resources texts.',
     )
-    # TODO: redis-cli connection kwargs: host, port, db, etc.
+
     return parser
 
 

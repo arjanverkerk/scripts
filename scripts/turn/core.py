@@ -13,7 +13,7 @@ import threading
 
 import redis
 
-PATIENCE = 60000   # time in milliseconds in queue before asking for repairs
+PATIENCE = 60000   # time in milliseconds in queue before bumping
 PREFIX = 'turn'  # prefix for all redis keys
 
 
@@ -143,9 +143,9 @@ class Queue(object):
         while waiting:
             message = self.subscription.listen(PATIENCE)
             if message is None:
-                # timeout beyond patience, repair and try again
-                self.message('{} calls repair'.format(number))
-                self.repair()
+                # timeout beyond patience, bump and try again
+                self.message('{} bumps'.format(number))
+                self.bump()
                 continue
             if message['type'] != 'message':
                 continue  # a subscribe message
@@ -165,8 +165,8 @@ class Queue(object):
         self.client.publish(self.keys.internal, self.keys.key(number))
         self.message('{} can start now'.format(number))
 
-    def repair(self):
-        """ Repair in case of crashed users. """
+    def bump(self):
+        """ Fix indicator in case of unnanounced departments. """
         # read client
         indicator, dispenser = map(int,
                                    self.client.mget(self.keys.indicator,
