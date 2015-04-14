@@ -13,12 +13,13 @@ import Queue as queueing
 import random
 import re
 import redis
+import sys
 import time
 import threading
 
 from .core import Keys
 from .core import Subscription
-from .core import Turner
+from .core import Server
 
 SEPARATOR = 60 * '-'
 
@@ -28,50 +29,54 @@ def find_resources(client):
     """ Detect dispensers and return corresponding resources. """
     wildcard = Keys.DISPENSER.format('*')
     pattern = re.compile(Keys.DISPENSER.format('(.*)'))
-    return [pattern.match(d).group(1) for d in client.keys(wildcard)]
+    return [pattern.match(d).group(1)
+            for d in client.scan_iter(wildcard)]
 
 
 # tools
 def follow(resources, *args, **kwargs):
     """ Follow publications involved with resources. """
     client = redis.Redis(**kwargs)
-    channels = []
-    for resource in resources:
-        keys = Keys(resource)
-        channels.append(keys.internal)
-        channels.append(keys.external)
-        subscription = Subscription(client, *channels)
+    if not resources:
+        resources = find_resources(client)
 
-    if not channels:
-        return
+    channels = [Keys.EXTERNAL.format(resource) for resource in resources]
+    subscription = Subscription(client, *channels)
 
     while True:
         try:
             message = subscription.listen()
             if message['type'] == 'message':
-                print(message['data'])
+                sys.stdout.write('{}\n'.format(message['data']))
+                sys.stdout.flush()
         except KeyboardInterrupt:
             break
 
 
 def reset(resources, *args, **kwargs):
-    """
-    Resetting the safe way:
-        watch the dispenser (someone enters)
-        get the state of dispenser and indicator
-        if system is idle, reset all to none
-
-        abort when a number is drawn during the transaction.
-    """
-    """ Remove dispensers and indicators for a resource. """
-    # TODO publish it so that clients can disconnect.
+    """ Remove dispensers and indicators for idle resources. """
     client = redis.Redis(**kwargs)
     if not resources:
         resources = find_resources(client)
-    dispensers = [Keys.DISPENSER.format(r) for r in resources]
-    indicators = [Keys.INDICATOR.format(r) for r in resources]
-    keys = dispensers + indicators
-    client.delete(*keys)
+
+    for resource in resources:
+        # do not reset when there is a queue
+        keys = Keys(resource)
+        indicator, dispenser = map(int, client.mget(keys.indicator,
+                                                    keys.dispenser))
+        if dispenser - indicator + 1:
+            print('{} is busy.'.format(resource))
+            continue
+
+        # do not reset when someone is incoming
+        with client.pipeline() as pipe:
+            try:
+                pipe.watch(keys.dispenser)
+                pipe.multi()
+                pipe.delete(keys.dispenser, keys.indicator)
+                pipe.execute()
+            except redis.WatchError:
+                print('{} got busy'.format(resource))
 
 
 def status(resources, *args, **kwargs):
@@ -98,7 +103,8 @@ def status(resources, *args, **kwargs):
         print(SEPARATOR)
 
         # body
-        numbers = sorted([keys.number(key) for key in client.keys(wildcard)])
+        numbers = sorted([keys.number(key)
+                          for key in client.scan_iter(wildcard)])
         for number in numbers:
             label = client.get(keys.key(number))
             print(template.format(label, number))
@@ -125,14 +131,16 @@ def status(resources, *args, **kwargs):
 
 def test(resources, *args, **kwargs):
     """
-    Indefinitely add jobs to turner.
+    Indefinitely add jobs to server.
     """
     # this only works with resources
     if not resources:
         return
 
+    values = {}
+
     # target for the test threads
-    def target(queue, turner):
+    def target(queue, server):
         """
         Test thread target.
         """
@@ -142,10 +150,13 @@ def test(resources, *args, **kwargs):
                 resource, period = queue.get()
             except TypeError:
                 break
-            label = 'Work for {:.2f} s'.format(period)
-            # execue
-            with turner.lock(resource=resource, label=label, expire=2):
+            label = 'Dummy workload taking {:.2f} s'.format(period)
+            # execute
+            with server.lock(resource=resource, label=label, expire=2):
+                now = time.time()
+                values[resource] = now
                 time.sleep(period)
+                assert values[resource] == now
 
     # launch threads
     threads = []
@@ -153,15 +164,14 @@ def test(resources, *args, **kwargs):
     for resource in resources:
         thread = threading.Thread(
             target=target,
-            kwargs={'queue': queue, 'turner': Turner(*args, **kwargs)},
+            kwargs={'queue': queue, 'server': Server(*args, **kwargs)},
         )
         thread.start()
         threads.append(thread)
 
     try:
         while True:
-            queue.put((random.choice(resources),
-                       max(0, random.gauss(1, 1))))
+            queue.put((random.choice(resources), 1 + 1 * random.random()))
     except KeyboardInterrupt:
         pass
 

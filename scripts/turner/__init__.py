@@ -19,18 +19,10 @@ There are two ways for the indicator for a resource to change:
    procedure checks if the user corresponding to the indicator is still
    active and if necessary sets the indicator to an appropriate value.
 
-Monitoring
-----------
+Tools
+-----
 The state of users and queues can be monitered by inspection of redis
 values and subscription to redis channels.
-
-TODO
-- make reset publish to notify active workers
-- make bump do resets and detect mishaps and publish accordingly
-- add general and resource publications
-- implement follow to follow those
-
-----
 """
 
 from __future__ import print_function
@@ -41,11 +33,12 @@ from __future__ import division
 import argparse
 
 from . import tools
-from .core import Turner
+from .core import Server
+
+Server  # pyflakes
 
 
 def command(command, resources, *args, **kwargs):
-    Turner  # pyflakes
     return getattr(tools, command)(resources, *args, **kwargs)
 
 
