@@ -27,14 +27,14 @@ with server.lock(resource=resource, label=label):
 
 Inspection can be done using the console script:
 
-```bash
+```
 $ turn status my_valuable_resource
 my_valuable_resource                                       5
 ------------------------------------------------------------
 This shows up in status reports and messages.              5
 ```
 
-```bash
+```
 $ turn follow my_valuable_resource
 my_valuable_resource: 5 drawn by "This shows up in status reports and messages."
 my_valuable_resource: 5 starts
