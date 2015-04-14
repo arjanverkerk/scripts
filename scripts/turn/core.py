@@ -212,7 +212,16 @@ class Server(object):
         :param label: String label to attach
         :param expire: int seconds
         """
+        exception = None
+
         queue = Queue(client=self.client, resource=resource)
         with queue.draw(label=label, expire=expire) as number:
             queue.wait(number)
-            yield
+
+            try:
+                yield
+            except Exception as exception:
+                exception = exception
+
+        if exception is not None:
+            raise exception
