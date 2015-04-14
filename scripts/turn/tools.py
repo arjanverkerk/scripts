@@ -39,6 +39,8 @@ def follow(resources, *args, **kwargs):
     client = redis.Redis(**kwargs)
     if not resources:
         resources = find_resources(client)
+    if not resources:
+        return
 
     channels = [Keys.EXTERNAL.format(resource) for resource in resources]
     subscription = Subscription(client, *channels)
@@ -123,7 +125,7 @@ def status(resources, *args, **kwargs):
              for dispenser, indicator in combinations)
 
     # print sorted results
-    print(template.format('Resource', 'Size'))
+    print(template.format('Resource', 'Queue size'))
     print(SEPARATOR)
     for size, resource in sorted(zip(sizes, resources), reverse=True):
         print(template.format(resource, size))
