@@ -7,7 +7,7 @@ Development packages needed:
 Turn
 ----
 Turn is a distributed resource locking queue system using python and
-redis. It with it a process thread can request a lock on a shared resource
+redis. With it a process thread can request a lock on a shared resource
 and wait for green light to do its work safely.
 
 Turn comes with a number of tools for inspection of the queues or the
