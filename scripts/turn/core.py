@@ -120,19 +120,21 @@ class Queue(object):
         kwargs = {'client': self.client, 'key': self.keys.key(number)}
         keeper = Keeper(label=label, expire=expire, **kwargs)
 
-        # yield number
-        yield number
+        try:
+            # yield number
+            yield number
 
-        # close keeper
-        keeper.close()
+        finally:
+            # close keeper
+            keeper.close()
 
-        # publish for humans
-        self.message('{} completed by "{}"'.format(number, label))
+            # publish for humans
+            self.message('{} completed by "{}"'.format(number, label))
 
-        # set and announce next number
-        number += 1
-        self.client.set(self.keys.indicator, number)
-        self.announce(number)
+            # set and announce next number
+            number += 1
+            self.client.set(self.keys.indicator, number)
+            self.announce(number)
 
     def wait(self, number):
         """ Waits and resets if necessary. """
@@ -212,16 +214,7 @@ class Server(object):
         :param label: String label to attach
         :param expire: int seconds
         """
-        exception = None
-
         queue = Queue(client=self.client, resource=resource)
         with queue.draw(label=label, expire=expire) as number:
             queue.wait(number)
-
-            try:
-                yield
-            except Exception as exception:
-                exception = exception
-
-        if exception is not None:
-            raise exception
+            yield
