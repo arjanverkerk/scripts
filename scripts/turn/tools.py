@@ -154,7 +154,7 @@ def test(resources, *args, **kwargs):
                 break
             label = 'Dummy workload taking {:.2f} s'.format(period)
             # execute
-            with server.lock(resource=resource, label=label, expire=2):
+            with server.lock(resource=resource, label=label):
                 value = '{:x}'.format(random.getrandbits(128))
                 values[resource] = value
                 time.sleep(period)
