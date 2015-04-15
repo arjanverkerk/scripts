@@ -173,7 +173,7 @@ def test(resources, *args, **kwargs):
 
     try:
         while True:
-            queue.put((random.choice(resources), 1 + 1 * random.random()))
+            queue.put((random.choice(resources), .1 + .1 * random.random()))
     except KeyboardInterrupt:
         pass
 

@@ -4,7 +4,7 @@ scripts
 Development packages needed:
   libhdf5-serial-dev
 
-turn
+Turn
 ----
 Turn is a distributed resource locking queue system using python and
 redis. It with it a process thread can request a lock on a shared resource
