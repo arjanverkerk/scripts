@@ -79,6 +79,7 @@ class Keeper(object):
 
     def target(self, client, key, label, expire):
         # set key signaling this number is active
+        expire = max(expire, 2)
         client.set(key, label, ex=expire)
 
         # keep key alive
