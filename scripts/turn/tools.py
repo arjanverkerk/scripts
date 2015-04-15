@@ -155,10 +155,10 @@ def test(resources, *args, **kwargs):
             label = 'Dummy workload taking {:.2f} s'.format(period)
             # execute
             with server.lock(resource=resource, label=label, expire=2):
-                now = time.time()
-                values[resource] = now
+                value = '{:x}'.format(random.getrandbits(128))
+                values[resource] = value
                 time.sleep(period)
-                assert values[resource] == now
+                assert values[resource] == value
 
     # launch threads
     threads = []
