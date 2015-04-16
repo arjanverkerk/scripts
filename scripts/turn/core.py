@@ -13,7 +13,7 @@ import threading
 
 import redis
 
-PATIENCE = 60000   # time in milliseconds in queue before bumping
+PATIENCE = 6000   # time in milliseconds in queue before bumping
 PREFIX = 'turn'  # prefix for all redis keys
 
 
@@ -122,20 +122,17 @@ class Queue(object):
         keeper = Keeper(label=label, expire=expire, **kwargs)
 
         try:
-            # yield number
             yield number
-
+        except:
+            self.message('{} crashed!'.format(number))
+            raise
         finally:
-            # close keeper
             keeper.close()
 
-            # publish for humans
-            self.message('{} completed by "{}"'.format(number, label))
-
-            # set and announce next number
-            number += 1
-            self.client.set(self.keys.indicator, number)
-            self.announce(number)
+        self.message('{} completed by "{}"'.format(number, label))
+        number += 1
+        self.client.set(self.keys.indicator, number)
+        self.announce(number)
 
     def wait(self, number):
         """ Waits and resets if necessary. """
