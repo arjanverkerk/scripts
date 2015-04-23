@@ -57,6 +57,7 @@ def main():
         return command(**kwargs)
     except:
         logger.exception('An exception has occurred.')
+        return 1
 '''
 
 RUNNER = '''
