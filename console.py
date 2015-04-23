@@ -26,7 +26,6 @@ scripts = [
     'gcalendar     = scripts.calendar:main',
     'ln_scripts    = scripts.ln_scripts:main',
     'newpy         = scripts.newpy:main',
-    'turn          = scripts.turn:main',
 ]
 
 # Some extra commands to symlink
@@ -34,4 +33,5 @@ commands = [
     'flake8',
     'ipython',
     'python',
+    'turn',
 ]
