@@ -28,8 +28,8 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-def command():
-    return 0
+def {name}():
+    pass
 
 
 def get_parser():
@@ -54,7 +54,8 @@ def main():
                         format='%(message)s')
 
     try:
-        return command(**kwargs)
+        {name}(**kwargs)
+        return 0
     except:
         logger.exception('An exception has occurred.')
         return 1
@@ -87,11 +88,12 @@ def get_parser():
 
 def create_module(target, executable):
     """ Create a module and set permissions if necessary. """
+    name = os.path.splitext(os.path.basename(target))[0]
 
     if executable:
-        content = INTERPRETER + TEMPLATE + RUNNER
+        content = INTERPRETER + TEMPLATE.format(name=name) + RUNNER
     else:
-        content = TEMPLATE
+        content = TEMPLATE.format(name=name)
 
     with open(target, 'w') as newfile:
         newfile.write(content)
