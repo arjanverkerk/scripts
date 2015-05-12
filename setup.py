@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from setuptools import setup
 
 import console
 
-name='scripts'
-version='0.1'
+name = 'scripts'
+version = '0.1'
 
 install_requires = [
     'setuptools',
@@ -13,6 +15,7 @@ install_requires = [
     'ipdb',
     'ipython',
     'markdown',
+    'naw',
     'numpy',
     'Pillow',
     'redis',
@@ -27,7 +30,7 @@ setup(
     author='Arjan Verkerk',
     author_email='arjan.verkerk@gmail.com',
     packages=['scripts'],
-    zip_safe = False,
+    zip_safe=False,
     install_requires=install_requires,
     entry_points={'console_scripts': console.scripts},
 )
