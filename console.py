@@ -34,4 +34,5 @@ commands = [
     'ipython',
     'python',
     'turn',
+    'naw',
 ]
