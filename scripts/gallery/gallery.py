@@ -47,34 +47,33 @@ THUMBNAILS = 'thumbnails'
 CONFIG = 'gallery.json'
 
 
-
 class Meta(object):
     """
     """
     def __init__(self, path):
         """ Initialize the data. """
         self.path = path
+        self.load()
+        if self.update():
+            self.save()
 
     def load(self):
-        """ Loads description, titles and checksums. """
+        """ Loads description, titles and checksums from config file. """
         path = os.path.join(self.path, CONFIG)
         try:
             data = json.load(open(path))
+            logger.debug('Load existing config.')
         except IOError:
             data = {}
+            logger.debug('Start with new config.')
         self.description = data.get('description', '')
         self.titles = data.get('titles', {})
         self.checksums = data.get('checksums', {})
 
     def update(self):
-        """
-        list, see what titles are unknown
-        calc checksums for new files
-        see if match by sum possible
-        """
+        """ Updates config with new or renamed files. """
         checksums = {self.checksums[name]: name for name in self.checksums}
-
-        names = set(os.listdir(self.path))
+        names = set(n for n in os.listdir(self.path) if not n.startswith('.'))
         try:
             names.remove(CONFIG)
         except KeyError:
@@ -83,30 +82,35 @@ class Meta(object):
         # handle new files
         create = names.difference(self.titles)
         for new in create:
-
-            logger.debug('Calculate checksum for {}'.format(new))
+            logger.debug('Calculate checksum for "{}".'.format(new))
             checksum = hashlib.md5(
                 open(os.path.join(self.path, new)).read(),
             ).hexdigest()
             try:
                 # change name for existing title
                 old = checksums[checksum]
+                logger.debug('Rename "{}" to "{}".'.format(old, new))
                 self.titles[new] = self.titles[old]
                 del self.titles[old]
+                del self.checksums[old]
             except KeyError:
                 # add new name with dummy title
+                logger.debug('Add new file "{}".'.format(new))
                 self.titles[new] = new
             finally:
                 self.checksums[new] = checksum
 
-        # now use the possibly changed titles to detect deleted files
+        # now use the updated filenames to detect deleted files
         delete = set(self.titles).difference(names)
         for name in delete:
+            logger.debug('Remove file "{}".'.format(name))
             del self.titles[name]
             del self.checksums[name]
 
+        return create or delete
+
     def save(self):
-        """ Write. """
+        """ Write current state to config file. """
         data = collections.OrderedDict()
         data['description'] = self.description
 
@@ -122,18 +126,14 @@ class Meta(object):
         with open(tmp_path, 'w') as tmp_file:
             json.dump(data, tmp_file, indent=2)
         os.rename(tmp_path, path)
-
+        logger.debug('Write config.')
 
 
 def gallery(source_dir, target_dir):
-    """ Update the titles file in folder path. """
-    print(os.path.abspath(source_dir))
-    print(os.getcwd())
-    print(os.path.abspath(target_dir))
     meta = Meta(source_dir)
-    meta.load()
-    meta.update()
-    meta.save()
+    meta
+    # create
+
     return 0
 
 
