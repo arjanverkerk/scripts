@@ -1,12 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Create or update titles.json file for the files in the directory. Titles
-already present will be preserved. Titles for nonexisting files will
-be removed. Detects renamed files by md5 sum.
+Run this module to sync
+- The metadata file
+- The images and videos
+- The html
+Folder structure
+----------------
+base
+    templates               # static
+    www                     # static
+        index.html          # by gallery index
+        assets              # static
+        year                # by gallery-index or gallery-media
+            index.html      # by gallery-index, if at all
+            album-title     # by gallery-index or gallery-media
+                index.html  # by gallery-html
+                media       # by gallery-media
+                thumbnails  # by gallery-media
+                posters     # by gallery-media
 
-TODO:
-- store the frame to dump as poster / thumbnail in videos
+- Maybe merge media and and meta, for smooth handling of changed files.
 """
+
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
@@ -14,28 +29,23 @@ from __future__ import division
 
 import argparse
 import collections
+import hashlib
 import json
 import logging
-import hashlib
 import os
 import sys
 
-from scripts.gallery import common
-
 logger = logging.getLogger(__name__)
 
+# album folders
+IMAGES = 'images'
+VIDEOS = 'videos'
+POSTERS = 'posters'
+THUMBNAILS = 'thumbnails'
 
-def get_parser():
-    """ Return argument parser. """
-    parser = argparse.ArgumentParser(
-        description=__doc__
-    )
-    # add arguments here
-    parser.add_argument(
-        'path',
-        metavar='PATH',
-    )
-    return parser
+# metafile with titles, etc
+CONFIG = 'gallery.json'
+
 
 
 class Meta(object):
@@ -47,7 +57,7 @@ class Meta(object):
 
     def load(self):
         """ Loads description, titles and checksums. """
-        path = os.path.join(self.path, common.META_NAME)
+        path = os.path.join(self.path, CONFIG)
         try:
             data = json.load(open(path))
         except IOError:
@@ -66,7 +76,7 @@ class Meta(object):
 
         names = set(os.listdir(self.path))
         try:
-            names.remove(common.META_NAME)
+            names.remove(CONFIG)
         except KeyError:
             pass
 
@@ -107,20 +117,40 @@ class Meta(object):
         data['checksums'] = sorted_dict(self.checksums)
 
         # write indirect
-        path = os.path.join(self.path, common.META_NAME)
+        path = os.path.join(self.path, CONFIG)
         tmp_path = '{}.in'.format(path)
         with open(tmp_path, 'w') as tmp_file:
             json.dump(data, tmp_file, indent=2)
         os.rename(tmp_path, path)
 
 
-def command(path):
+
+def gallery(source_dir, target_dir):
     """ Update the titles file in folder path. """
-    meta = Meta(path)
+    print(os.path.abspath(source_dir))
+    print(os.getcwd())
+    print(os.path.abspath(target_dir))
+    meta = Meta(source_dir)
     meta.load()
     meta.update()
     meta.save()
     return 0
+
+
+def get_parser():
+    """ Return argument parser. """
+    parser = argparse.ArgumentParser(
+        description=__doc__
+    )
+    parser.add_argument(
+        'source_dir',
+        metavar='SOURCE',
+    )
+    parser.add_argument(
+        'target_dir',
+        metavar='TARGET',
+    )
+    return parser
 
 
 def main():
@@ -132,6 +162,8 @@ def main():
                         format='%(message)s')
 
     try:
-        return command(**kwargs)
+        gallery(**kwargs)
+        return 0
     except:
         logger.exception('An exception has occurred.')
+        return 1

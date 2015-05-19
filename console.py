@@ -12,7 +12,7 @@ scripts = [
     'gis-polygon   = scripts.gis.polygon:main',
     'gis-sum       = scripts.gis.sum:main',
     # gallery
-    'gallery       = scripts.gallery:main',
+    'gallery       = scripts.gallery.gallery:main',
     # various
     'dbf2csv       = scripts.dbf2csv:main',
     'gcalendar     = scripts.calendar:main',

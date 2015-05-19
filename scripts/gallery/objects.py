@@ -27,12 +27,17 @@ def command(path):
     return 0
 
 
-class MediaObject(object):
+class Object(object):
     """ Common things like file locations. """
     pass
 
 
 class Image(object):
+    def __init__(self, source_path, target_dir):
+        source_path = source_path
+        target_dir = target_dir  # Or maybe already split and forget
+
+class Video(object):
     def __init__(self, source_path, target_dir):
         source_path = source_path
         target_dir = target_dir  # Or maybe already split and forget
