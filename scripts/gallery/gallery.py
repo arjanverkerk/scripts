@@ -1,19 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Folder structure
-----------------
-index.html                  # gallery
-assets                      # static
-path                        # gallery
-    index.html              # ...
-    to                      # ...
-        index.html          # ...
-        album               # ...
-            index.html      # ...
-            media           # ...
-            thumbnails      # ...
-            posters         # ...
-"""
+""" Gallery creator. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -32,8 +18,21 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
-
-# metafile with titles, etc
+"""
+Folder structure
+----------------
+index.html                  # gallery
+assets                      # static
+path                        # gallery
+    index.html              # ...
+    to                      # ...
+        index.html          # ...
+        album               # ...
+            index.html      # ...
+            media           # ...
+            thumbnails      # ...
+            posters         # ...
+"""
 
 
 class Catalog(object):
@@ -241,6 +240,10 @@ def gallery(source_dir, target_dir):
     objects = catalog.objects()
     from pprint import pprint
     pprint(list(objects))
+    # now what?
+    # call convert on each object.
+    # create album from templates
+    # create index here pointing to any indexes html found in tree
     return 0
 
 
