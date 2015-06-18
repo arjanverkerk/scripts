@@ -35,6 +35,17 @@ path                        # gallery
 """
 
 
+class TemplateLoader(object):
+    """ Load templates, if necessary from file. """
+    path = os.path.join((os.path.dirname(__file__)), 'templates')
+    templates = {}
+
+    @classmethod
+    def load(cls, name):
+        path = os.path.join(cls.path, '{}.html'.format(name))
+        return open(path).read()
+
+
 class Catalog(object):
     """ Manage album configuration file. """
 
@@ -143,9 +154,11 @@ class Catalog(object):
             root, ext = os.path.splitext(name)
             kwargs = {'title': title, 'base': base, 'root': root, 'ext': ext}
             if ext.lower() in self.IMAGES:
-                yield ImageObject(router=image_router, **kwargs)
+                router = image_router
+                yield ImageObject(router=router, **kwargs)
             if ext.lower() in self.VIDEOS:
-                yield VideoObject(router=video_router, **kwargs)
+                router = video_router
+                yield VideoObject(router=router, **kwargs)
 
 
 class BaseRouter(object):
@@ -196,6 +209,9 @@ class BaseObject(object):
 
 
 class ImageObject(BaseObject):
+
+    template = TemplateLoader.load('image')
+
     def convert(self, base, root, ext):
         """
         Create resized image and thumbnail.
@@ -224,8 +240,14 @@ class ImageObject(BaseObject):
         thumbnail = image.resize(thumbnail_size, resample)
         thumbnail.save(thumbnail_path)
 
+    def render(self):
+        return self.template
+
 
 class VideoObject(BaseObject):
+
+    template = TemplateLoader.load('image')
+
     def convert(self, base, root, ext):
         video_path = self.router.video(root, ext)
         poster_path = self.router.poster(root, ext)
@@ -234,12 +256,17 @@ class VideoObject(BaseObject):
         print(poster_path)
         print(thumbnail_path)
 
+    def render(self):
+        return self.template
+
 
 def gallery(source_dir, target_dir):
     catalog = Catalog(source_dir)
-    objects = catalog.objects()
+    objects = list(catalog.objects())
     from pprint import pprint
-    pprint(list(objects))
+    pprint(objects)
+    print(''.join(o.render() for o in objects))
+
     # now what?
     # call convert on each object.
     # create album from templates
