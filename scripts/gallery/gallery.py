@@ -16,22 +16,13 @@ import sys
 
 from PIL import Image
 
+WIDTH = 1024
+HEIGHT = 768
+
 logger = logging.getLogger(__name__)
 
 """
-Folder structure
-----------------
-index.html                  # gallery
-assets                      # static
-path                        # gallery
-    index.html              # ...
-    to                      # ...
-        index.html          # ...
-        album               # ...
-            index.html      # ...
-            media           # ...
-            thumbnails      # ...
-            posters         # ...
+Make file paths relative and working.
 """
 
 
@@ -64,9 +55,6 @@ class Catalog(object):
         '.ogv',
         # '.sub',
     ])
-
-    WIDTH = 1024
-    HEIGHT = 768
 
     def __init__(self, path):
         """ Initialize the data. """
@@ -146,11 +134,12 @@ class Catalog(object):
         os.rename(tmp_path, path)
         logger.debug('Write config.')
 
-    def objects(self, target_path):
+    def objects(self):
         yield HeaderObject(title=self.description,
                            description=self.description)
         for name, title in sorted(self.titles.items()):
             path = os.path.join(self.path, name)
+            root, ext = os.path.splitext(name)
             if ext.lower() in self.IMAGES:
                 yield ImageObject(path=path, title=title)
             if ext.lower() in self.VIDEOS:
@@ -158,144 +147,141 @@ class Catalog(object):
         yield FooterObject()
 
 
-class BaseRouter(object):
-    """ Generate paths to media files. """
+class HeaderObject(object):
+    """ Header for gallery index page. """
+    TEMPLATE = TemplateLoader.load('header')
 
+    def __init__(self, title, description):
+        self.title = title
+        self.description = description
+
+    def process(self, gallery):
+        return self.TEMPLATE.format(title=self.title,
+                                    description=self.description)
+
+
+class FooterObject(object):
+    """ Footer for gallery index page. """
+    TEMPLATE = TemplateLoader.load('footer')
+
+    def process(self, gallery):
+        return self.TEMPLATE
+
+
+class MediaObject(object):
+    """ Base for media objects. """
     THUMBNAILS = 'thumbnails'
 
-    def __init__(self, target_dir):
-        self.target = target_dir
-
-    def build(self, sub, root, ext):
-        return os.path.join(self.target, sub, '{}{}'.format(root, ext))
-
-    def thumbnail(self, root, ext):
-        return self.build(self.THUMBNAILS, root, '.jpg')
-
-
-class ImageRouter(BaseRouter):
-    """ Generate paths to image files. """
-
-    IMAGES = 'images'
-
-    def image(self, root, ext):
-        return self.build(self.IMAGES, root, ext)
-
-
-class VideoRouter(BaseRouter):
-    """ Generate paths to video files. """
-
-    VIDEOS = 'videos'
-    POSTERS = 'posters'
-
-    def video(self, root, ext):
-        return self.build(self.VIDEOS, root, '.ogv')
-
-    def poster(self, root, ext):
-        return self.build(self.POSTERS, root, '.jpg')
-
-
-class GalleryObject(object):
-    """ All objects are assigned a target, converted, and rendered. """
-
-    def assign(self, path)
-        pass
-
-    def convert(self)
-        pass
-
-    def render(self):
-        print(self)
-        return self.template.format(**self.kwargs)
-
-
-class HeaderObject(RenderableObject):
-    template = TemplateLoader.load('header')
-
-class FooterObject(RenderableObject):
-    template = TemplateLoader.load('footer')
-
-class MediaObject(RenderableObject):
-    """ Convert media files. """
-    def __init__(self, router, title, base, root, ext):
-        self.router = router
+    def __init__(self, path, title):
+        self.path = path
         self.title = title
-        self.base = base
-        self.root = root
-        self.ext = ext
-
-    def set
 
 
 class ImageObject(MediaObject):
-    template = TemplateLoader.load('image')
+    """ An image. """
+    TEMPLATE = TemplateLoader.load('image')
+    IMAGES = 'images'
 
-    @property
-    def kwargs(self):
-        return {'href': self.router.
-                'title': self.title}
+    def prepare(self, gallery):
+        """ Set paths on self. """
+        root, ext = os.path.splitext(os.path.basename(self.path))
+        self.image = os.path.join(
+            gallery, self.IMAGES, '{}.jpg'.format(root),
+        )
+        self.thumbnail = os.path.join(
+            gallery, self.THUMBNAILS, '{}.jpg'.format(root),
+        )
 
-    def prepare(self, target)
-        base = self.path
-        root, ext = os.path.splitext(name)
-        kwargs = {'title': title, 'base': base, 'root': root, 'ext': ext}
-        image_router = ImageRouter(base)
-        video_router = VideoRouter(base)
+        # create subdirs
+        for path in (self.image, self.thumbnail):
+            try:
+                os.mkdir(os.path.dirname(path))
+            except OSError:
+                continue
 
     def convert(self):
-        """
-        Create resized image and thumbnail.
-        """
-        base, root, ext = self.base, self.root, self.ext
-        source_path = os.path.join(base, root + ext)
-        image_path = self.router.image(root, ext)
-        thumbnail_path = self.router.thumbnail(root, ext)
-
-        source = Image.open(source_path)
+        source = Image.open(self.path)
         width, height = source.size
         resample = Image.ANTIALIAS
 
         # image
-        logger.debug('Create image {}'.format(image_path))
-        image_ratio = min(self.width / width, self.height / height)
+        logger.debug('Create image {}'.format(self.image))
+        image_ratio = min(WIDTH / width, HEIGHT / height)
         image_size = (int(width * image_ratio),
                       int(height * image_ratio))
         image = source.resize(image_size, resample)
-        image.save(image_path)
+        image.save(self.image)
 
         # thumbnail
-        logger.debug('Create thumbnail {}'.format(thumbnail_path))
+        logger.debug('Create thumbnail {}'.format(self.thumbnail))
         thumbnail_ratio = image_ratio / 8
         thumbnail_size = (int(width * thumbnail_ratio),
                           int(height * thumbnail_ratio))
         thumbnail = image.resize(thumbnail_size, resample)
-        thumbnail.save(thumbnail_path)
+        thumbnail.save(self.thumbnail)
+
+    def process(self, gallery):
+        self.prepare(gallery=gallery)
+        self.convert()
+        return self.TEMPLATE.format(alt=self.title,
+                                    href=self.image,
+                                    title=self.title,
+                                    src=self.thumbnail)
 
 
 class VideoObject(MediaObject):
-    template = TemplateLoader.load('image')
+    """ A video. """
+    TEMPLATE = TemplateLoader.load('image')
+    VIDEOS = 'videos'
+    POSTERS = 'posters'
 
-    def convert(self, base, root, ext):
-        video_path = self.router.video(root, ext)
-        poster_path = self.router.poster(root, ext)
-        thumbnail_path = self.router.thumbnail(root, ext)
-        print(video_path)
-        print(poster_path)
-        print(thumbnail_path)
+    def prepare(self, gallery):
+        """ Set paths on self. """
+        root, ext = os.path.splitext(os.path.basename(self.path))
+        self.video = os.path.join(
+            gallery, self.VIDEOS, '{}.ogv'.format(root),
+        )
+        self.poster = os.path.join(
+            gallery, self.POSTERS, '{}.jpg'.format(root),
+        )
+        self.thumbnail = os.path.join(
+            gallery, self.THUMBNAILS, '{}.jpg'.format(root),
+        )
+
+        # create subdirs
+        for path in (self.video, self.poster, self.thumbnail):
+            try:
+                os.mkdir(os.path.dirname(path))
+            except OSError:
+                continue
+
+    def convert(self):
+        print(self.video)
+        print(self.poster)
+        print(self.thumbnail)
+
+    def process(self, gallery):
+        self.prepare(gallery=gallery)
+        self.convert()
+        return self.TEMPLATE.format(alt=self.title,
+                                    href=self.video,
+                                    title=self.title,
+                                    poster=self.poster,
+                                    src=self.thumbnail)
 
 
-def gallery(source_dir, target_dir):
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
+def gallery(source, gallery):
+    # make room for the album
+    if not os.path.exists(gallery):
+        os.makedirs(gallery)
 
-    catalog = Catalog(source_dir)
-    # catalog has description for header, so get fill it in template
-    with open(os.path.join(target_dir, 'index.html'), 'w') as index:
-        index.write(TemplateLoader.load('header'))
+    # the catalog contains all source information
+    catalog = Catalog(source)
+
+    # conversion yields pieces of the index page
+    with open(os.path.join(gallery, 'index.html'), 'w') as index:
         for obj in catalog.objects():
-            # call convert on each object.
-            index.write(obj.render())
-        index.write(TemplateLoader.load('footer'))
+            index.write(obj.process(gallery=gallery))
     # create index here pointing to any indexes html found in tree
     return 0
 
@@ -306,12 +292,12 @@ def get_parser():
         description=__doc__
     )
     parser.add_argument(
-        'source_dir',
+        'source',
         metavar='SOURCE',
     )
     parser.add_argument(
-        'target_dir',
-        metavar='TARGET',
+        'gallery',
+        metavar='gallery',
     )
     return parser
 
