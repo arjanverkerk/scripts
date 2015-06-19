@@ -146,19 +146,16 @@ class Catalog(object):
         os.rename(tmp_path, path)
         logger.debug('Write config.')
 
-    def objects(self):
-        base = self.path
-        image_router = ImageRouter(base)
-        video_router = VideoRouter(base)
+    def objects(self, target_path):
+        yield HeaderObject(title=self.description,
+                           description=self.description)
         for name, title in sorted(self.titles.items()):
-            root, ext = os.path.splitext(name)
-            kwargs = {'title': title, 'base': base, 'root': root, 'ext': ext}
+            path = os.path.join(self.path, name)
             if ext.lower() in self.IMAGES:
-                router = image_router
-                yield ImageObject(router=router, **kwargs)
+                yield ImageObject(path=path, title=title)
             if ext.lower() in self.VIDEOS:
-                router = video_router
-                yield VideoObject(router=router, **kwargs)
+                yield VideoObject(path=path, title=title)
+        yield FooterObject()
 
 
 class BaseRouter(object):
@@ -198,7 +195,27 @@ class VideoRouter(BaseRouter):
         return self.build(self.POSTERS, root, '.jpg')
 
 
-class BaseObject(object):
+class GalleryObject(object):
+    """ All objects are assigned a target, converted, and rendered. """
+
+    def assign(self, path)
+        pass
+
+    def convert(self)
+        pass
+
+    def render(self):
+        print(self)
+        return self.template.format(**self.kwargs)
+
+
+class HeaderObject(RenderableObject):
+    template = TemplateLoader.load('header')
+
+class FooterObject(RenderableObject):
+    template = TemplateLoader.load('footer')
+
+class MediaObject(RenderableObject):
     """ Convert media files. """
     def __init__(self, router, title, base, root, ext):
         self.router = router
@@ -207,15 +224,29 @@ class BaseObject(object):
         self.root = root
         self.ext = ext
 
+    def set
 
-class ImageObject(BaseObject):
 
+class ImageObject(MediaObject):
     template = TemplateLoader.load('image')
 
-    def convert(self, base, root, ext):
+    @property
+    def kwargs(self):
+        return {'href': self.router.
+                'title': self.title}
+
+    def prepare(self, target)
+        base = self.path
+        root, ext = os.path.splitext(name)
+        kwargs = {'title': title, 'base': base, 'root': root, 'ext': ext}
+        image_router = ImageRouter(base)
+        video_router = VideoRouter(base)
+
+    def convert(self):
         """
         Create resized image and thumbnail.
         """
+        base, root, ext = self.base, self.root, self.ext
         source_path = os.path.join(base, root + ext)
         image_path = self.router.image(root, ext)
         thumbnail_path = self.router.thumbnail(root, ext)
@@ -240,12 +271,8 @@ class ImageObject(BaseObject):
         thumbnail = image.resize(thumbnail_size, resample)
         thumbnail.save(thumbnail_path)
 
-    def render(self):
-        return self.template
 
-
-class VideoObject(BaseObject):
-
+class VideoObject(MediaObject):
     template = TemplateLoader.load('image')
 
     def convert(self, base, root, ext):
@@ -255,9 +282,6 @@ class VideoObject(BaseObject):
         print(video_path)
         print(poster_path)
         print(thumbnail_path)
-
-    def render(self):
-        return self.template
 
 
 def gallery(source_dir, target_dir):
