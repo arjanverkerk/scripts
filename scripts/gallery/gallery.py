@@ -261,15 +261,17 @@ class VideoObject(BaseObject):
 
 
 def gallery(source_dir, target_dir):
-    catalog = Catalog(source_dir)
-    objects = list(catalog.objects())
-    from pprint import pprint
-    pprint(objects)
-    print(''.join(o.render() for o in objects))
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
 
-    # now what?
-    # call convert on each object.
-    # create album from templates
+    catalog = Catalog(source_dir)
+    # catalog has description for header, so get fill it in template
+    with open(os.path.join(target_dir, 'index.html'), 'w') as index:
+        index.write(TemplateLoader.load('header'))
+        for obj in catalog.objects():
+            # call convert on each object.
+            index.write(obj.render())
+        index.write(TemplateLoader.load('footer'))
     # create index here pointing to any indexes html found in tree
     return 0
 
