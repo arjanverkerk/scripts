@@ -21,10 +21,6 @@ HEIGHT = 768
 
 logger = logging.getLogger(__name__)
 
-"""
-Make file paths relative and working.
-"""
-
 
 class TemplateLoader(object):
     """ Load templates, if necessary from file. """
@@ -72,7 +68,8 @@ class Catalog(object):
         except IOError:
             data = {}
             logger.debug('Start with new config.')
-        self.description = data.get('description', '')
+        self.gallery = data.get('gallery', 'Gallery')
+        self.description = data.get('description', 'Description')
         self.titles = data.get('titles', {})
         self.checksums = data.get('checksums', {})
 
@@ -118,6 +115,7 @@ class Catalog(object):
     def save(self):
         """ Write current state to config file. """
         data = collections.OrderedDict()
+        data['gallery'] = self.gallery
         data['description'] = self.description
 
         # sorted dicts for titles and checksums
@@ -135,7 +133,7 @@ class Catalog(object):
         logger.debug('Write config.')
 
     def objects(self):
-        yield HeaderObject(title=self.description,
+        yield HeaderObject(title=self.gallery,
                            description=self.description)
         for name, title in sorted(self.titles.items()):
             path = os.path.join(self.path, name)
@@ -176,6 +174,16 @@ class MediaObject(object):
         self.path = path
         self.title = title
 
+    def build(self, gallery, sub, name, ext):
+        """ Construct paths and create folder if necessary. """
+        try:
+            os.mkdir(os.path.join(gallery, sub))
+        except OSError:
+            pass
+        relative = os.path.join(sub, name + ext)
+        absolute = os.path.join(gallery, relative)
+        return {'relative': relative, 'absolute': absolute}
+
 
 class ImageObject(MediaObject):
     """ An image. """
@@ -184,20 +192,10 @@ class ImageObject(MediaObject):
 
     def prepare(self, gallery):
         """ Set paths on self. """
-        root, ext = os.path.splitext(os.path.basename(self.path))
-        self.image = os.path.join(
-            gallery, self.IMAGES, '{}.jpg'.format(root),
-        )
-        self.thumbnail = os.path.join(
-            gallery, self.THUMBNAILS, '{}.jpg'.format(root),
-        )
-
-        # create subdirs
-        for path in (self.image, self.thumbnail):
-            try:
-                os.mkdir(os.path.dirname(path))
-            except OSError:
-                continue
+        name, ext = os.path.splitext(os.path.basename(self.path))
+        kwargs = {'gallery': gallery, 'name': name}
+        self.image = self.build(sub=self.IMAGES, ext='.jpg', **kwargs)
+        self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
 
     def convert(self):
         source = Image.open(self.path)
@@ -205,28 +203,28 @@ class ImageObject(MediaObject):
         resample = Image.ANTIALIAS
 
         # image
-        logger.debug('Create image {}'.format(self.image))
+        logger.debug('Create image {}'.format(self.image['absolute']))
         image_ratio = min(WIDTH / width, HEIGHT / height)
         image_size = (int(width * image_ratio),
                       int(height * image_ratio))
         image = source.resize(image_size, resample)
-        image.save(self.image)
+        image.save(self.image['absolute'])
 
         # thumbnail
-        logger.debug('Create thumbnail {}'.format(self.thumbnail))
+        logger.debug('Create thumbnail {}'.format(self.thumbnail['absolute']))
         thumbnail_ratio = image_ratio / 8
         thumbnail_size = (int(width * thumbnail_ratio),
                           int(height * thumbnail_ratio))
         thumbnail = image.resize(thumbnail_size, resample)
-        thumbnail.save(self.thumbnail)
+        thumbnail.save(self.thumbnail['absolute'])
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
         self.convert()
         return self.TEMPLATE.format(alt=self.title,
-                                    href=self.image,
+                                    href=self.image['relative'],
                                     title=self.title,
-                                    src=self.thumbnail)
+                                    src=self.thumbnail['relative'])
 
 
 class VideoObject(MediaObject):
@@ -238,36 +236,25 @@ class VideoObject(MediaObject):
     def prepare(self, gallery):
         """ Set paths on self. """
         root, ext = os.path.splitext(os.path.basename(self.path))
-        self.video = os.path.join(
-            gallery, self.VIDEOS, '{}.ogv'.format(root),
-        )
-        self.poster = os.path.join(
-            gallery, self.POSTERS, '{}.jpg'.format(root),
-        )
-        self.thumbnail = os.path.join(
-            gallery, self.THUMBNAILS, '{}.jpg'.format(root),
-        )
-
-        # create subdirs
-        for path in (self.video, self.poster, self.thumbnail):
-            try:
-                os.mkdir(os.path.dirname(path))
-            except OSError:
-                continue
+        name, ext = os.path.splitext(os.path.basename(self.path))
+        kwargs = {'gallery': gallery, 'name': name}
+        self.video = self.build(sub=self.VIDEOS, ext='.ogv', **kwargs)
+        self.poster = self.build(sub=self.POSTERS, ext='.jpg', **kwargs)
+        self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
 
     def convert(self):
-        print(self.video)
-        print(self.poster)
-        print(self.thumbnail)
+        print(self.video['absolute'])
+        print(self.poster['absolute'])
+        print(self.thumbnail['absolute'])
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
         self.convert()
         return self.TEMPLATE.format(alt=self.title,
-                                    href=self.video,
+                                    href=self.video['relative'],
                                     title=self.title,
-                                    poster=self.poster,
-                                    src=self.thumbnail)
+                                    poster=self.poster['relative'],
+                                    src=self.thumbnail['relative'])
 
 
 def gallery(source, gallery):
