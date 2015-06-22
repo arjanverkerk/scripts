@@ -21,6 +21,16 @@ HEIGHT = 768
 
 logger = logging.getLogger(__name__)
 
+"""
+Todo: A .jpg with the same name as a video is ignored in the catalog,
+but it is used as poster and thumbnail by the conersion.
+like wise a .sub gets just copied.
+
+What about the order? Alphabetical seems just fine. Need to enforce.
+
+But for catalog update, we need names as a set.
+"""
+
 
 class TemplateLoader(object):
     """ Load templates, if necessary from file. """
@@ -49,8 +59,9 @@ class Catalog(object):
         '.mov',
         '.mp4',
         '.ogv',
-        # '.sub',
     ])
+
+    OBJECTS = IMAGES | VIDEOS
 
     def __init__(self, path):
         """ Initialize the data. """
@@ -58,6 +69,22 @@ class Catalog(object):
         self.load()
         if self.update():
             self.save()
+
+    def inspect(self):
+        """
+        Return a proper set of names. That should be all names that
+        have an extension like in self.OBJECTS, except when a jpg root
+        matches a video root. Then it is a poster.
+        """
+        names = os.listdir(self.path)
+        roots, exts = zip(*map(os.path.splitext, names))
+
+        jpgs = set([root for root, ext in zip(roots, exts) if ext == '.jpg'])
+        jpgs  # TODO something with these.
+
+        return set([name
+                    for name, root, ext in zip(names, roots, exts)
+                    if ext.lower() in self.OBJECTS])
 
     def load(self):
         """ Loads description, titles and checksums from config file. """
@@ -76,11 +103,7 @@ class Catalog(object):
     def update(self):
         """ Updates config with new or renamed files. """
         checksums = {self.checksums[name]: name for name in self.checksums}
-        names = set(n for n in os.listdir(self.path) if not n.startswith('.'))
-        try:
-            names.remove(self.CATALOG)
-        except KeyError:
-            pass
+        names = self.inspect()
 
         # handle new files
         create = names.difference(self.titles)
@@ -203,20 +226,28 @@ class ImageObject(MediaObject):
         resample = Image.ANTIALIAS
 
         # image
-        logger.debug('Create image {}'.format(self.image['absolute']))
-        image_ratio = min(WIDTH / width, HEIGHT / height)
-        image_size = (int(width * image_ratio),
-                      int(height * image_ratio))
-        image = source.resize(image_size, resample)
-        image.save(self.image['absolute'])
+        path = self.image['absolute']
+        if os.path.exists(path):
+            logger.debug('Skip image {}'.format(path))
+        else:
+            logger.debug('Create image {}'.format(path))
+            image_ratio = min(WIDTH / width, HEIGHT / height)
+            image_size = (int(width * image_ratio),
+                          int(height * image_ratio))
+            image = source.resize(image_size, resample)
+            image.save(path)
 
         # thumbnail
-        logger.debug('Create thumbnail {}'.format(self.thumbnail['absolute']))
-        thumbnail_ratio = image_ratio / 8
-        thumbnail_size = (int(width * thumbnail_ratio),
-                          int(height * thumbnail_ratio))
-        thumbnail = image.resize(thumbnail_size, resample)
-        thumbnail.save(self.thumbnail['absolute'])
+        path = self.thumbnail['absolute']
+        if os.path.exists(path):
+            logger.debug('Skip thumbnail {}'.format(path))
+        else:
+            logger.debug('Create thumbnail {}'.format(path))
+            thumbnail_ratio = image_ratio / 8
+            thumbnail_size = (int(width * thumbnail_ratio),
+                              int(height * thumbnail_ratio))
+            thumbnail = image.resize(thumbnail_size, resample)
+            thumbnail.save(path)
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
@@ -266,9 +297,11 @@ def gallery(source, gallery):
     catalog = Catalog(source)
 
     # conversion yields pieces of the index page
-    with open(os.path.join(gallery, 'index.html'), 'w') as index:
+    path = os.path.join(gallery, 'index.html')
+    with open(path, 'w') as index:
         for obj in catalog.objects():
             index.write(obj.process(gallery=gallery))
+    logger.debug('Write {}'.format(path))
     # create index here pointing to any indexes html found in tree
     return 0
 
