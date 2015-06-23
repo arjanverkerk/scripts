@@ -253,9 +253,9 @@ class ImageObject(MediaObject):
 
     def convert(self):
         """ Create necessary files. """
-        self.resample(graphic_path=self.image['absolute'],
-                      thumbnail_path=self.thumbnail['absolute'],
-                      source_path=os.path.splitext(self.path)[0] + '.jpg')
+        self.resample(source_path=self.path,
+                      graphic_path=self.image['absolute'],
+                      thumbnail_path=self.thumbnail['absolute'])
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
@@ -277,7 +277,7 @@ class VideoObject(MediaObject):
         root, ext = os.path.splitext(os.path.basename(self.path))
         name, ext = os.path.splitext(os.path.basename(self.path))
         kwargs = {'gallery': gallery, 'name': name}
-        self.video = self.build(sub=self.VIDEOS, ext='.ogv', **kwargs)
+        self.video = self.build(sub=self.VIDEOS, ext='.mp4', **kwargs)
         self.poster = self.build(sub=self.POSTERS, ext='.jpg', **kwargs)
         self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
 
@@ -311,6 +311,11 @@ class VideoObject(MediaObject):
                        '-x', str(width),
                        '-y', str(height),
                        self.path, '-o', path]
+            command = ['mpv', self.path,
+                       '-o', path,
+                       '-ovc', 'libx264',
+                       '-oac', 'aac',
+                       '-vf', 'scale={}:{}'.format(width, height)]
             subprocess.call(command, stdout=devnull, stderr=devnull)
 
     def process(self, gallery):
