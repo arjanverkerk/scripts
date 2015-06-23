@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-""" Gallery creator. """
+"""
+Any movies in the source should have a poster with the same name as the
+video, but having a '.jpg' extension.  Gallery creator. Run from your
+www folder where the assets are found.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -12,6 +16,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 
 from PIL import Image
@@ -20,16 +25,6 @@ WIDTH = 1024
 HEIGHT = 768
 
 logger = logging.getLogger(__name__)
-
-"""
-Todo: A .jpg with the same name as a video is ignored in the catalog,
-but it is used as poster and thumbnail by the conersion.
-like wise a .sub gets just copied.
-
-What about the order? Alphabetical seems just fine. Need to enforce.
-
-But for catalog update, we need names as a set.
-"""
 
 
 class TemplateLoader(object):
@@ -72,19 +67,27 @@ class Catalog(object):
 
     def inspect(self):
         """
-        Return a proper set of names. That should be all names that
-        have an extension like in self.OBJECTS, except when a jpg root
-        matches a video root. Then it is a poster.
+        Return names in path.
         """
         names = os.listdir(self.path)
         roots, exts = zip(*map(os.path.splitext, names))
 
-        jpgs = set([root for root, ext in zip(roots, exts) if ext == '.jpg'])
-        jpgs  # TODO something with these.
+        videos = [ext.lower() in self.VIDEOS for ext in exts]
+        images = [ext.lower() in self.IMAGES for ext in exts]
 
-        return set([name
-                    for name, root, ext in zip(names, roots, exts)
-                    if ext.lower() in self.OBJECTS])
+        videoset = set([root for root, video in zip(roots, videos) if video])
+
+        objects = []
+        properties = zip(names, roots, exts, videos, images)
+        for name, root, ext, video, image in properties:
+            if video:
+                objects.append(name)
+            elif image:
+                if root in videoset and ext.lower() == '.jpg':
+                    continue
+                objects.append(name)
+
+        return set(objects)
 
     def load(self):
         """ Loads description, titles and checksums from config file. """
@@ -207,6 +210,34 @@ class MediaObject(object):
         absolute = os.path.join(gallery, relative)
         return {'relative': relative, 'absolute': absolute}
 
+    def resample(self, source_path, graphic_path, thumbnail_path):
+        # open
+        source = Image.open(source_path)
+        width, height = source.size
+        resample = Image.ANTIALIAS
+
+        # poster
+        if os.path.exists(graphic_path):
+            logger.debug('Skip {}'.format(graphic_path))
+        else:
+            logger.debug('Create {}'.format(graphic_path))
+            poster_ratio = min(WIDTH / width, HEIGHT / height)
+            poster_size = (int(width * poster_ratio),
+                           int(height * poster_ratio))
+            poster = source.resize(poster_size, resample)
+            poster.save(graphic_path)
+
+        # thumbnail
+        if os.path.exists(thumbnail_path):
+            logger.debug('Skip {}'.format(thumbnail_path))
+        else:
+            logger.debug('Create {}'.format(thumbnail_path))
+            thumbnail_ratio = poster_ratio / 8
+            thumbnail_size = (int(width * thumbnail_ratio),
+                              int(height * thumbnail_ratio))
+            thumbnail = poster.resize(thumbnail_size, resample)
+            thumbnail.save(thumbnail_path)
+
 
 class ImageObject(MediaObject):
     """ An image. """
@@ -221,33 +252,10 @@ class ImageObject(MediaObject):
         self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
 
     def convert(self):
-        source = Image.open(self.path)
-        width, height = source.size
-        resample = Image.ANTIALIAS
-
-        # image
-        path = self.image['absolute']
-        if os.path.exists(path):
-            logger.debug('Skip image {}'.format(path))
-        else:
-            logger.debug('Create image {}'.format(path))
-            image_ratio = min(WIDTH / width, HEIGHT / height)
-            image_size = (int(width * image_ratio),
-                          int(height * image_ratio))
-            image = source.resize(image_size, resample)
-            image.save(path)
-
-        # thumbnail
-        path = self.thumbnail['absolute']
-        if os.path.exists(path):
-            logger.debug('Skip thumbnail {}'.format(path))
-        else:
-            logger.debug('Create thumbnail {}'.format(path))
-            thumbnail_ratio = image_ratio / 8
-            thumbnail_size = (int(width * thumbnail_ratio),
-                              int(height * thumbnail_ratio))
-            thumbnail = image.resize(thumbnail_size, resample)
-            thumbnail.save(path)
+        """ Create necessary files. """
+        self.resample(graphic_path=self.image['absolute'],
+                      thumbnail_path=self.thumbnail['absolute'],
+                      source_path=os.path.splitext(self.path)[0] + '.jpg')
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
@@ -260,7 +268,7 @@ class ImageObject(MediaObject):
 
 class VideoObject(MediaObject):
     """ A video. """
-    TEMPLATE = TemplateLoader.load('image')
+    TEMPLATE = TemplateLoader.load('video')
     VIDEOS = 'videos'
     POSTERS = 'posters'
 
@@ -274,9 +282,36 @@ class VideoObject(MediaObject):
         self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
 
     def convert(self):
-        print(self.video['absolute'])
-        print(self.poster['absolute'])
-        print(self.thumbnail['absolute'])
+        """ Create necessary files. """
+        # poster and thumbnail
+        self.resample(graphic_path=self.poster['absolute'],
+                      thumbnail_path=self.thumbnail['absolute'],
+                      source_path=os.path.splitext(self.path)[0] + '.jpg')
+
+        # video
+        path = self.video['absolute']
+        if os.path.exists(path):
+            logger.debug('Skip {}'.format(path))
+        else:
+            logger.debug('Create {}'.format(path))
+
+            # determine size
+            command = ['ffmpeg2theora', '--info', self.path]
+            devnull = open(os.devnull, 'w')
+            output = subprocess.check_output(command, stderr=devnull)
+            info = json.loads(output)['video'][0]
+            width, height = info['width'], info['height']
+            video_ratio = min(WIDTH / width, HEIGHT / height)
+            if video_ratio < 1:
+                width = int(width * video_ratio)
+                height = int(height * video_ratio)
+
+            # convert
+            command = ['ffmpeg2theora',
+                       '-x', str(width),
+                       '-y', str(height),
+                       self.path, '-o', path]
+            subprocess.call(command, stdout=devnull, stderr=devnull)
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
@@ -302,23 +337,18 @@ def gallery(source, gallery):
         for obj in catalog.objects():
             index.write(obj.process(gallery=gallery))
     logger.debug('Write {}'.format(path))
-    # create index here pointing to any indexes html found in tree
+    # TODO create index here pointing to any indexes html found in tree
     return 0
 
 
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(
-        description=__doc__
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        'source',
-        metavar='SOURCE',
-    )
-    parser.add_argument(
-        'gallery',
-        metavar='gallery',
-    )
+    parser.add_argument('source', metavar='SOURCE')
+    parser.add_argument('gallery', metavar='GALLERY')
     return parser
 
 
