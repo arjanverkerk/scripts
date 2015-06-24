@@ -97,7 +97,7 @@ class Catalog(object):
             logger.debug('Load existing {}'.format(path))
         except IOError:
             data = {}
-            logger.debug('Start with new {}'.fomat(path))
+            logger.debug('Start with new {}'.format(path))
         self.gallery = data.get('gallery', 'Gallery')
         self.description = data.get('description', 'Description')
         self.titles = data.get('titles', {})
@@ -307,16 +307,34 @@ class VideoObject(MediaObject):
                 height = int(height * video_ratio)
 
             # convert
-            command = ['ffmpeg2theora',
-                       '-x', str(width),
-                       '-y', str(height),
-                       self.path, '-o', path]
-            command = ['mpv', self.path,
+            command = ['HandBrakeCLI',
+                       '-i', self.path,
                        '-o', path,
-                       '-ovc', 'libx264',
-                       '-oac', 'aac',
-                       '-vf', 'scale={}:{}'.format(width, height)]
-            subprocess.call(command, stdout=devnull, stderr=devnull)
+                       '-e', 'x264',
+                       '-q', '22.0',
+                       '-r', '30',
+                       '--pfr',
+                       '-a', '1'
+                       '-E', 'faac',
+                       '-B', '128',
+                       '-6', 'dpl2',
+                       '-R', 'Auto',
+                       '-D', '0.0',
+                       '--audio-copy-mask', 'aac,ac3,dtshd,dts,mp3'
+                       '--audio-fallback', 'ffac3',
+                       '-f', 'mp4',
+                       # '-X', '1280',
+                       # '-Y', '720',
+                       '-X', str(width),
+                       '-Y', str(height),
+                       '--loose-anamorphic',
+                       '--modulus', '2',
+                       '--x264-preset', 'medium',
+                       '--h264-profile', 'main',
+                       '--h264-level', '3.1']
+            # subprocess.call(command, stdout=devnull, stderr=devnull)
+            subprocess.call(command)
+            print(' '.join(command))
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
