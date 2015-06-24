@@ -94,10 +94,10 @@ class Catalog(object):
         path = os.path.join(self.path, self.CATALOG)
         try:
             data = json.load(open(path))
-            logger.debug('Load existing config.')
+            logger.debug('Load existing {}'.format(path))
         except IOError:
             data = {}
-            logger.debug('Start with new config.')
+            logger.debug('Start with new {}'.fomat(path))
         self.gallery = data.get('gallery', 'Gallery')
         self.description = data.get('description', 'Description')
         self.titles = data.get('titles', {})
@@ -173,7 +173,7 @@ class Catalog(object):
 
 class HeaderObject(object):
     """ Header for gallery index page. """
-    TEMPLATE = TemplateLoader.load('header')
+    TEMPLATE = TemplateLoader.load('album_header')
 
     def __init__(self, title, description):
         self.title = title
@@ -186,7 +186,7 @@ class HeaderObject(object):
 
 class FooterObject(object):
     """ Footer for gallery index page. """
-    TEMPLATE = TemplateLoader.load('footer')
+    TEMPLATE = TemplateLoader.load('album_footer')
 
     def process(self, gallery):
         return self.TEMPLATE
@@ -241,7 +241,7 @@ class MediaObject(object):
 
 class ImageObject(MediaObject):
     """ An image. """
-    TEMPLATE = TemplateLoader.load('image')
+    TEMPLATE = TemplateLoader.load('album_image')
     IMAGES = 'images'
 
     def prepare(self, gallery):
@@ -268,7 +268,7 @@ class ImageObject(MediaObject):
 
 class VideoObject(MediaObject):
     """ A video. """
-    TEMPLATE = TemplateLoader.load('video')
+    TEMPLATE = TemplateLoader.load('album_video')
     VIDEOS = 'videos'
     POSTERS = 'posters'
 
@@ -338,11 +338,24 @@ def gallery(source, gallery):
 
     # conversion yields pieces of the index page
     path = os.path.join(gallery, 'index.html')
+    logger.debug('Write {}'.format(path))
     with open(path, 'w') as index:
         for obj in catalog.objects():
             index.write(obj.process(gallery=gallery))
+
+    # rebuild index here
+    path = os.path.join('index.html')
     logger.debug('Write {}'.format(path))
-    # TODO create index here pointing to any indexes html found in tree
+    with open('index.html', 'w') as index:
+        index.write(TemplateLoader.load('index_header'))
+        link = TemplateLoader.load('index_link')
+        base = gallery.split(os.path.sep)[0]
+        for gallery, dirnames, filenames in os.walk(base):
+            if 'index.html' in filenames:
+                name = os.path.basename(gallery)
+                index.write(link.format(gallery=gallery, name=name))
+        index.write(TemplateLoader.load('index_footer'))
+
     return 0
 
 
