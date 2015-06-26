@@ -218,15 +218,15 @@ class MediaObject(object):
         source = Image.open(source_path)
         width, height = source.size
         resample = Image.ANTIALIAS
+        ratio = min(IMAGE_WIDTH / width, IMAGE_HEIGHT / height)
 
         # graphic
         if os.path.exists(graphic_path):
             logger.debug('Skip {}'.format(graphic_path))
         else:
             logger.debug('Create {}'.format(graphic_path))
-            graphic_ratio = min(IMAGE_WIDTH / width, IMAGE_HEIGHT / height)
-            graphic_size = (int(width * graphic_ratio),
-                            int(height * graphic_ratio))
+            graphic_size = (int(width * ratio),
+                            int(height * ratio))
             graphic = source.resize(graphic_size, resample)
             graphic.save(graphic_path)
 
@@ -235,10 +235,10 @@ class MediaObject(object):
             logger.debug('Skip {}'.format(thumbnail_path))
         else:
             logger.debug('Create {}'.format(thumbnail_path))
-            thumbnail_ratio = graphic_ratio / 8
-            thumbnail_size = (int(width * thumbnail_ratio),
-                              int(height * thumbnail_ratio))
-            thumbnail = graphic.resize(thumbnail_size, resample)
+            ratio /= 16
+            thumbnail_size = (int(width * ratio),
+                              int(height * ratio))
+            thumbnail = source.resize(thumbnail_size, resample)
             thumbnail.save(thumbnail_path)
 
 
