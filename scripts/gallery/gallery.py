@@ -346,6 +346,28 @@ class VideoObject(MediaObject):
                                     src=self.thumbnail['relative'])
 
 
+def rebuild():
+    """ Rewrite global index. """
+    # load templates
+    header = TemplateLoader.load('index_header')
+    sub = TemplateLoader.load('index_sub')
+    link = TemplateLoader.load('index_link')
+    footer = TemplateLoader.load('index_footer')
+
+    # write while walking
+    assets = {'js', 'css', 'img', 'fonts', 'index.html'}
+    with open('index.html', 'w') as index:
+        index.write(header)
+        for group in os.listdir('.'):
+            if group in assets:
+                continue
+            index.write(sub.format(group=group))
+            for name in os.listdir(group):
+                gallery = os.path.join(group, name)
+                index.write(link.format(name=name, gallery=gallery))
+        index.write(footer)
+
+
 def gallery(source, gallery):
     # make room for the album
     if not os.path.exists(gallery):
@@ -364,16 +386,7 @@ def gallery(source, gallery):
     # rebuild index here
     path = os.path.join('index.html')
     logger.debug('Write {}'.format(path))
-    with open('index.html', 'w') as index:
-        index.write(TemplateLoader.load('index_header'))
-        link = TemplateLoader.load('index_link')
-        base = gallery.split(os.path.sep)[0]
-        for gallery, dirnames, filenames in os.walk(base):
-            if 'index.html' in filenames:
-                name = os.path.basename(gallery)
-                index.write(link.format(gallery=gallery, name=name))
-        index.write(TemplateLoader.load('index_footer'))
-
+    rebuild()
     return 0
 
 
