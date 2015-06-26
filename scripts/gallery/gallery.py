@@ -21,8 +21,11 @@ import sys
 
 from PIL import Image
 
-WIDTH = 1024
-HEIGHT = 768
+IMAGE_WIDTH = 1920
+IMAGE_HEIGHT = 1080
+
+VIDEO_WIDTH = 1280
+VIDEO_HEIGHT = 720
 
 logger = logging.getLogger(__name__)
 
@@ -216,26 +219,26 @@ class MediaObject(object):
         width, height = source.size
         resample = Image.ANTIALIAS
 
-        # poster
+        # graphic
         if os.path.exists(graphic_path):
             logger.debug('Skip {}'.format(graphic_path))
         else:
             logger.debug('Create {}'.format(graphic_path))
-            poster_ratio = min(WIDTH / width, HEIGHT / height)
-            poster_size = (int(width * poster_ratio),
-                           int(height * poster_ratio))
-            poster = source.resize(poster_size, resample)
-            poster.save(graphic_path)
+            graphic_ratio = min(IMAGE_WIDTH / width, IMAGE_HEIGHT / height)
+            graphic_size = (int(width * graphic_ratio),
+                            int(height * graphic_ratio))
+            graphic = source.resize(graphic_size, resample)
+            graphic.save(graphic_path)
 
         # thumbnail
         if os.path.exists(thumbnail_path):
             logger.debug('Skip {}'.format(thumbnail_path))
         else:
             logger.debug('Create {}'.format(thumbnail_path))
-            thumbnail_ratio = poster_ratio / 8
+            thumbnail_ratio = graphic_ratio / 8
             thumbnail_size = (int(width * thumbnail_ratio),
                               int(height * thumbnail_ratio))
-            thumbnail = poster.resize(thumbnail_size, resample)
+            thumbnail = graphic.resize(thumbnail_size, resample)
             thumbnail.save(thumbnail_path)
 
 
@@ -301,7 +304,7 @@ class VideoObject(MediaObject):
             output = subprocess.check_output(command, stderr=devnull)
             info = json.loads(output)['video'][0]
             width, height = info['width'], info['height']
-            video_ratio = min(WIDTH / width, HEIGHT / height)
+            video_ratio = min(VIDEO_WIDTH / width, VIDEO_HEIGHT / height)
             if video_ratio < 1:
                 width = int(width * video_ratio)
                 height = int(height * video_ratio)
