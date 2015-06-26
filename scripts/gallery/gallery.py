@@ -335,9 +335,8 @@ class VideoObject(MediaObject):
                        '--x264-preset', 'medium',
                        '--h264-profile', 'main',
                        '--h264-level', '3.1']
-            # subprocess.call(command, stdout=devnull, stderr=devnull)
-            subprocess.call(command)
-            print(' '.join(command))
+            subprocess.call(command, stdout=devnull, stderr=devnull)
+            # subprocess.call(command)
 
     def process(self, gallery):
         self.prepare(gallery=gallery)
@@ -353,9 +352,9 @@ def rebuild():
     """ Rewrite global index. """
     # load templates
     header = TemplateLoader.load('index_header')
-    sub = TemplateLoader.load('index_sub')
-    link = TemplateLoader.load('index_link')
     footer = TemplateLoader.load('index_footer')
+    sub = '      <h2>{group}</h2>\n'
+    link = '        <li><a href="{gallery}">{name}</a></li>\n'
 
     # write while walking
     assets = {'js', 'css', 'img', 'fonts', 'index.html'}
@@ -365,9 +364,11 @@ def rebuild():
             if group in assets:
                 continue
             index.write(sub.format(group=group))
+            index.write('      <ul>\n')
             for name in os.listdir(group):
                 gallery = os.path.join(group, name)
                 index.write(link.format(name=name, gallery=gallery))
+            index.write('      </ul>\n')
         index.write(footer)
 
 
