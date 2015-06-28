@@ -18,6 +18,8 @@ scripts = [
     'gcalendar     = scripts.calendar:main',
     'ln_scripts    = scripts.ln_scripts:main',
     'newpy         = scripts.newpy:main',
+    'tstx         = scripts.tstx:main',
+    'tst         = scripts.tst:main',
 ]
 
 # Some extra commands to symlink
