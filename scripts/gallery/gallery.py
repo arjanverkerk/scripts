@@ -21,11 +21,15 @@ import sys
 
 from PIL import Image
 
-IMAGE_WIDTH = 1920
-IMAGE_HEIGHT = 1080
+VIDEO_WIDTH = 710
+VIDEO_HEIGHT = 400
 
-VIDEO_WIDTH = 1280
-VIDEO_HEIGHT = 720
+GRAPHIC_WIDTH = 1280
+GRAPHIC_HEIGHT = 800
+
+THUMBNAIL_WIDTH = 75
+THUMBNAIL_HEIGHT = 75
+THUMBNAIL_SIZE = THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -214,31 +218,37 @@ class MediaObject(object):
         return {'relative': relative, 'absolute': absolute}
 
     def resample(self, source_path, graphic_path, thumbnail_path):
-        # open
+        # properties
         source = Image.open(source_path)
         width, height = source.size
         resample = Image.ANTIALIAS
-        ratio = min(IMAGE_WIDTH / width, IMAGE_HEIGHT / height)
 
-        # graphic
+        # resample for graphic
         if os.path.exists(graphic_path):
             logger.debug('Skip {}'.format(graphic_path))
         else:
             logger.debug('Create {}'.format(graphic_path))
-            graphic_size = (int(width * ratio),
-                            int(height * ratio))
-            graphic = source.resize(graphic_size, resample)
+            ratio = min(GRAPHIC_WIDTH / width, GRAPHIC_HEIGHT / height)
+            size = (int(width * ratio), int(height * ratio))
+            graphic = source.resize(size, resample)
             graphic.save(graphic_path)
 
-        # thumbnail
+        # resample for thumbnail
         if os.path.exists(thumbnail_path):
             logger.debug('Skip {}'.format(thumbnail_path))
         else:
             logger.debug('Create {}'.format(thumbnail_path))
-            ratio /= 16
-            thumbnail_size = (int(width * ratio),
-                              int(height * ratio))
-            thumbnail = source.resize(thumbnail_size, resample)
+            ratio = max(THUMBNAIL_WIDTH / width, THUMBNAIL_HEIGHT / height)
+            size = (int(width * ratio), int(height * ratio))
+            resample = source.resize(size, resample)
+
+        # crop and / or white pad to square thumbnail
+            thumbnail_size = THUMBNAIL_SIZE[0]
+            offset = (int((thumbnail_size - size[0]) / 2),
+                      int((thumbnail_size - size[1]) / 2))
+
+            thumbnail = Image.new('RGBA', THUMBNAIL_SIZE, (255, 255, 255, 0))
+            thumbnail.paste(resample, offset)
             thumbnail.save(thumbnail_path)
 
 
