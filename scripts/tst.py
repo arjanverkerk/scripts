@@ -7,7 +7,9 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
+import datetime
 import logging
+import os
 import sys
 
 logger = logging.getLogger(__name__)
@@ -15,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 def tst(paths):
     for path in paths:
-        basename = os.path.basename(source_file)
-        dirname = os.path.dirname(source_file)
+        dirname, basename = os.path.split(path)
         prefix = datetime.datetime.now().strftime('%Y-%m-%d_')
         newpath = os.path.join(dirname, prefix + basename)
         os.rename(path, newpath)
