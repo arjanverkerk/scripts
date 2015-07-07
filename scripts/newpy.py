@@ -36,7 +36,7 @@ def {name}():
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)
-    # add arguments here
+    parser.add_argument('-v', '--verbose', action='store_true')
     # parser.add_argument('path', metavar='FILE')
     return parser
 
