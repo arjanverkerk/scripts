@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Any movies in the source should have a poster with the same name as the
-video, but having a '.jpg' extension.  Gallery creator. Run from your
+Gallery creator. Any movies in the source should have a poster with the
+same name as the video, but having a '.jpg' extension. Run from your
 www folder where the assets are found.
 """
 
@@ -364,7 +364,7 @@ def rebuild():
     header = TemplateLoader.load('index_header')
     footer = TemplateLoader.load('index_footer')
     sub = '      <h2>{group}</h2>\n'
-    link = '        <li><a href="{gallery}">{name}</a></li>\n'
+    link = '        <li><a href="{gallery}">{title}</a></li>\n'
 
     # write while walking
     assets = {'js', 'css', 'img', 'fonts', 'index.html'}
@@ -377,7 +377,8 @@ def rebuild():
             index.write('      <ul>\n')
             for name in os.listdir(group):
                 gallery = os.path.join(group, name)
-                index.write(link.format(name=name, gallery=gallery))
+                title = name.title()
+                index.write(link.format(title=title, gallery=gallery))
             index.write('      </ul>\n')
         index.write(footer)
 
