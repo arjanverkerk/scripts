@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-""" Gallery creator. """
+"""
+Gallery creator. Any movies in the source should have a poster with the
+same name as the video, but having a '.jpg' extension. Run from your
+www folder where the assets are found.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -12,27 +16,33 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 
 from PIL import Image
 
+VIDEO_WIDTH = 710
+VIDEO_HEIGHT = 400
+
+GRAPHIC_WIDTH = 1280
+GRAPHIC_HEIGHT = 800
+
+THUMBNAIL_WIDTH = 75
+THUMBNAIL_HEIGHT = 75
+THUMBNAIL_SIZE = THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT
+
 logger = logging.getLogger(__name__)
 
-"""
-Folder structure
-----------------
-index.html                  # gallery
-assets                      # static
-path                        # gallery
-    index.html              # ...
-    to                      # ...
-        index.html          # ...
-        album               # ...
-            index.html      # ...
-            media           # ...
-            thumbnails      # ...
-            posters         # ...
-"""
+
+class TemplateLoader(object):
+    """ Load templates, if necessary from file. """
+    path = os.path.join((os.path.dirname(__file__)), 'templates')
+    templates = {}
+
+    @classmethod
+    def load(cls, name):
+        path = os.path.join(cls.path, '{}.html'.format(name))
+        return open(path).read()
 
 
 class Catalog(object):
@@ -51,11 +61,9 @@ class Catalog(object):
         '.mov',
         '.mp4',
         '.ogv',
-        # '.sub',
     ])
 
-    WIDTH = 1024
-    HEIGHT = 768
+    OBJECTS = IMAGES | VIDEOS
 
     def __init__(self, path):
         """ Initialize the data. """
@@ -64,27 +72,48 @@ class Catalog(object):
         if self.update():
             self.save()
 
+    def inspect(self):
+        """
+        Return names in path.
+        """
+        names = os.listdir(self.path)
+        roots, exts = zip(*map(os.path.splitext, names))
+
+        videos = [ext.lower() in self.VIDEOS for ext in exts]
+        images = [ext.lower() in self.IMAGES for ext in exts]
+
+        videoset = set([root for root, video in zip(roots, videos) if video])
+
+        objects = []
+        properties = zip(names, roots, exts, videos, images)
+        for name, root, ext, video, image in properties:
+            if video:
+                objects.append(name)
+            elif image:
+                if root in videoset and ext.lower() == '.jpg':
+                    continue
+                objects.append(name)
+
+        return set(objects)
+
     def load(self):
         """ Loads description, titles and checksums from config file. """
         path = os.path.join(self.path, self.CATALOG)
         try:
             data = json.load(open(path))
-            logger.debug('Load existing config.')
+            logger.debug('Load existing {}'.format(path))
         except IOError:
             data = {}
-            logger.debug('Start with new config.')
-        self.description = data.get('description', '')
+            logger.debug('Start with new {}'.format(path))
+        self.gallery = data.get('gallery', 'Gallery')
+        self.description = data.get('description', 'Description')
         self.titles = data.get('titles', {})
         self.checksums = data.get('checksums', {})
 
     def update(self):
         """ Updates config with new or renamed files. """
         checksums = {self.checksums[name]: name for name in self.checksums}
-        names = set(n for n in os.listdir(self.path) if not n.startswith('.'))
-        try:
-            names.remove(self.CATALOG)
-        except KeyError:
-            pass
+        names = self.inspect()
 
         # handle new files
         create = names.difference(self.titles)
@@ -119,6 +148,7 @@ class Catalog(object):
     def save(self):
         """ Write current state to config file. """
         data = collections.OrderedDict()
+        data['gallery'] = self.gallery
         data['description'] = self.description
 
         # sorted dicts for titles and checksums
@@ -136,130 +166,253 @@ class Catalog(object):
         logger.debug('Write config.')
 
     def objects(self):
-        base = self.path
-        image_router = ImageRouter(base)
-        video_router = VideoRouter(base)
+        yield HeaderObject(title=self.gallery,
+                           description=self.description)
         for name, title in sorted(self.titles.items()):
+            path = os.path.join(self.path, name)
             root, ext = os.path.splitext(name)
-            kwargs = {'title': title, 'base': base, 'root': root, 'ext': ext}
             if ext.lower() in self.IMAGES:
-                yield ImageObject(router=image_router, **kwargs)
+                yield ImageObject(path=path, title=title)
             if ext.lower() in self.VIDEOS:
-                yield VideoObject(router=video_router, **kwargs)
+                yield VideoObject(path=path, title=title)
+        yield FooterObject()
 
 
-class BaseRouter(object):
-    """ Generate paths to media files. """
+class HeaderObject(object):
+    """ Header for gallery index page. """
+    TEMPLATE = TemplateLoader.load('album_header')
 
+    def __init__(self, title, description):
+        self.title = title
+        self.description = description
+
+    def process(self, gallery):
+        return self.TEMPLATE.format(title=self.title,
+                                    description=self.description)
+
+
+class FooterObject(object):
+    """ Footer for gallery index page. """
+    TEMPLATE = TemplateLoader.load('album_footer')
+
+    def process(self, gallery):
+        return self.TEMPLATE
+
+
+class MediaObject(object):
+    """ Base for media objects. """
     THUMBNAILS = 'thumbnails'
 
-    def __init__(self, target_dir):
-        self.target = target_dir
-
-    def build(self, sub, root, ext):
-        return os.path.join(self.target, sub, '{}{}'.format(root, ext))
-
-    def thumbnail(self, root, ext):
-        return self.build(self.THUMBNAILS, root, '.jpg')
-
-
-class ImageRouter(BaseRouter):
-    """ Generate paths to image files. """
-
-    IMAGES = 'images'
-
-    def image(self, root, ext):
-        return self.build(self.IMAGES, root, ext)
-
-
-class VideoRouter(BaseRouter):
-    """ Generate paths to video files. """
-
-    VIDEOS = 'videos'
-    POSTERS = 'posters'
-
-    def video(self, root, ext):
-        return self.build(self.VIDEOS, root, '.ogv')
-
-    def poster(self, root, ext):
-        return self.build(self.POSTERS, root, '.jpg')
-
-
-class BaseObject(object):
-    """ Convert media files. """
-    def __init__(self, router, title, base, root, ext):
-        self.router = router
+    def __init__(self, path, title):
+        self.path = path
         self.title = title
-        self.base = base
-        self.root = root
-        self.ext = ext
 
+    def build(self, gallery, sub, name, ext):
+        """ Construct paths and create folder if necessary. """
+        try:
+            os.mkdir(os.path.join(gallery, sub))
+        except OSError:
+            pass
+        relative = os.path.join(sub, name + ext)
+        absolute = os.path.join(gallery, relative)
+        return {'relative': relative, 'absolute': absolute}
 
-class ImageObject(BaseObject):
-    def convert(self, base, root, ext):
-        """
-        Create resized image and thumbnail.
-        """
-        source_path = os.path.join(base, root + ext)
-        image_path = self.router.image(root, ext)
-        thumbnail_path = self.router.thumbnail(root, ext)
-
+    def resample(self, source_path, graphic_path, thumbnail_path):
+        # properties
         source = Image.open(source_path)
         width, height = source.size
         resample = Image.ANTIALIAS
 
-        # image
-        logger.debug('Create image {}'.format(image_path))
-        image_ratio = min(self.width / width, self.height / height)
-        image_size = (int(width * image_ratio),
-                      int(height * image_ratio))
-        image = source.resize(image_size, resample)
-        image.save(image_path)
+        # resample for graphic
+        if os.path.exists(graphic_path):
+            logger.debug('Skip {}'.format(graphic_path))
+        else:
+            logger.debug('Create {}'.format(graphic_path))
+            ratio = min(GRAPHIC_WIDTH / width, GRAPHIC_HEIGHT / height)
+            size = (int(width * ratio), int(height * ratio))
+            graphic = source.resize(size, resample)
+            graphic.save(graphic_path)
 
-        # thumbnail
-        logger.debug('Create thumbnail {}'.format(thumbnail_path))
-        thumbnail_ratio = image_ratio / 8
-        thumbnail_size = (int(width * thumbnail_ratio),
-                          int(height * thumbnail_ratio))
-        thumbnail = image.resize(thumbnail_size, resample)
-        thumbnail.save(thumbnail_path)
+        # resample for thumbnail
+        if os.path.exists(thumbnail_path):
+            logger.debug('Skip {}'.format(thumbnail_path))
+        else:
+            logger.debug('Create {}'.format(thumbnail_path))
+            ratio = max(THUMBNAIL_WIDTH / width, THUMBNAIL_HEIGHT / height)
+            size = (int(width * ratio), int(height * ratio))
+            resample = source.resize(size, resample)
+
+        # crop and / or white pad to square thumbnail
+            thumbnail_size = THUMBNAIL_SIZE[0]
+            offset = (int((thumbnail_size - size[0]) / 2),
+                      int((thumbnail_size - size[1]) / 2))
+
+            thumbnail = Image.new('RGBA', THUMBNAIL_SIZE, (255, 255, 255, 0))
+            thumbnail.paste(resample, offset)
+            thumbnail.save(thumbnail_path)
 
 
-class VideoObject(BaseObject):
-    def convert(self, base, root, ext):
-        video_path = self.router.video(root, ext)
-        poster_path = self.router.poster(root, ext)
-        thumbnail_path = self.router.thumbnail(root, ext)
-        print(video_path)
-        print(poster_path)
-        print(thumbnail_path)
+class ImageObject(MediaObject):
+    """ An image. """
+    TEMPLATE = TemplateLoader.load('album_image')
+    IMAGES = 'images'
+
+    def prepare(self, gallery):
+        """ Set paths on self. """
+        name, ext = os.path.splitext(os.path.basename(self.path))
+        kwargs = {'gallery': gallery, 'name': name}
+        self.image = self.build(sub=self.IMAGES, ext='.jpg', **kwargs)
+        self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
+
+    def convert(self):
+        """ Create necessary files. """
+        self.resample(source_path=self.path,
+                      graphic_path=self.image['absolute'],
+                      thumbnail_path=self.thumbnail['absolute'])
+
+    def process(self, gallery):
+        self.prepare(gallery=gallery)
+        self.convert()
+        return self.TEMPLATE.format(alt=self.title,
+                                    href=self.image['relative'],
+                                    title=self.title,
+                                    src=self.thumbnail['relative'])
 
 
-def gallery(source_dir, target_dir):
-    catalog = Catalog(source_dir)
-    objects = catalog.objects()
-    from pprint import pprint
-    pprint(list(objects))
-    # now what?
-    # call convert on each object.
-    # create album from templates
-    # create index here pointing to any indexes html found in tree
+class VideoObject(MediaObject):
+    """ A video. """
+    TEMPLATE = TemplateLoader.load('album_video')
+    VIDEOS = 'videos'
+    POSTERS = 'posters'
+
+    def prepare(self, gallery):
+        """ Set paths on self. """
+        root, ext = os.path.splitext(os.path.basename(self.path))
+        name, ext = os.path.splitext(os.path.basename(self.path))
+        kwargs = {'gallery': gallery, 'name': name}
+        self.video = self.build(sub=self.VIDEOS, ext='.mp4', **kwargs)
+        self.poster = self.build(sub=self.POSTERS, ext='.jpg', **kwargs)
+        self.thumbnail = self.build(sub=self.THUMBNAILS, ext='.jpg', **kwargs)
+
+    def convert(self):
+        """ Create necessary files. """
+        # poster and thumbnail
+        self.resample(graphic_path=self.poster['absolute'],
+                      thumbnail_path=self.thumbnail['absolute'],
+                      source_path=os.path.splitext(self.path)[0] + '.jpg')
+
+        # video
+        path = self.video['absolute']
+        if os.path.exists(path):
+            logger.debug('Skip {}'.format(path))
+        else:
+            logger.debug('Create {}'.format(path))
+
+            # determine size
+            command = ['ffmpeg2theora', '--info', self.path]
+            devnull = open(os.devnull, 'w')
+            output = subprocess.check_output(command, stderr=devnull)
+            info = json.loads(output)['video'][0]
+            width, height = info['width'], info['height']
+            video_ratio = min(VIDEO_WIDTH / width, VIDEO_HEIGHT / height)
+            if video_ratio < 1:
+                width = int(width * video_ratio)
+                height = int(height * video_ratio)
+
+            # convert
+            command = ['HandBrakeCLI',
+                       '-i', self.path,
+                       '-o', path,
+                       '-e', 'x264',
+                       '-q', '22.0',
+                       '-r', '30',
+                       '--pfr',
+                       '-a', '1'
+                       '-E', 'faac',
+                       '-B', '128',
+                       '-6', 'dpl2',
+                       '-R', 'Auto',
+                       '-D', '0.0',
+                       '--audio-copy-mask', 'aac,ac3,dtshd,dts,mp3'
+                       '--audio-fallback', 'ffac3',
+                       '-f', 'mp4',
+                       # '-X', '1280',
+                       # '-Y', '720',
+                       '-X', str(width),
+                       '-Y', str(height),
+                       '--loose-anamorphic',
+                       '--modulus', '2',
+                       '--x264-preset', 'medium',
+                       '--h264-profile', 'main',
+                       '--h264-level', '3.1']
+            subprocess.call(command, stdout=devnull, stderr=devnull)
+            # subprocess.call(command)
+
+    def process(self, gallery):
+        self.prepare(gallery=gallery)
+        self.convert()
+        return self.TEMPLATE.format(alt=self.title,
+                                    href=self.video['relative'],
+                                    title=self.title,
+                                    poster=self.poster['relative'],
+                                    src=self.thumbnail['relative'])
+
+
+def rebuild():
+    """ Rewrite global index. """
+    # load templates
+    header = TemplateLoader.load('index_header')
+    footer = TemplateLoader.load('index_footer')
+    sub = '      <h2>{group}</h2>\n'
+    link = '        <li><a href="{gallery}">{title}</a></li>\n'
+
+    # write while walking
+    assets = {'js', 'css', 'img', 'fonts', 'index.html'}
+    with open('index.html', 'w') as index:
+        index.write(header)
+        for group in os.listdir('.'):
+            if group in assets:
+                continue
+            index.write(sub.format(group=group))
+            index.write('      <ul>\n')
+            for name in os.listdir(group):
+                gallery = os.path.join(group, name)
+                title = name.title()
+                index.write(link.format(title=title, gallery=gallery))
+            index.write('      </ul>\n')
+        index.write(footer)
+
+
+def gallery(source, gallery):
+    # make room for the album
+    if not os.path.exists(gallery):
+        os.makedirs(gallery)
+
+    # the catalog contains all source information
+    catalog = Catalog(source)
+
+    # conversion yields pieces of the index page
+    path = os.path.join(gallery, 'index.html')
+    logger.debug('Write {}'.format(path))
+    with open(path, 'w') as index:
+        for obj in catalog.objects():
+            index.write(obj.process(gallery=gallery))
+
+    # rebuild index here
+    path = os.path.join('index.html')
+    logger.debug('Write {}'.format(path))
+    rebuild()
     return 0
 
 
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(
-        description=__doc__
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        'source_dir',
-        metavar='SOURCE',
-    )
-    parser.add_argument(
-        'target_dir',
-        metavar='TARGET',
-    )
+    parser.add_argument('source', metavar='SOURCE')
+    parser.add_argument('gallery', metavar='GALLERY')
     return parser
 
 
