@@ -11,6 +11,8 @@ scripts = [
     'gis-bbox      = scripts.gis.bbox:main',
     'gis-polygon   = scripts.gis.polygon:main',
     'gis-sum       = scripts.gis.sum:main',
+    'gis-ogr-merge = scripts.gis.ogr_merge:main',
+    'gis-ogr-snap  = scripts.gis.ogr_snap:main',
     # gallery
     'gallery       = scripts.gallery.gallery:main',
     # various
