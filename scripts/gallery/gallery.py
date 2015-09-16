@@ -377,7 +377,7 @@ def rebuild():
             index.write('      <ul>\n')
             for name in os.listdir(group):
                 gallery = os.path.join(group, name)
-                title = name.title()
+                title = name.replace('_', ' ').title()
                 index.write(link.format(title=title, gallery=gallery))
             index.write('      </ul>\n')
         index.write(footer)
