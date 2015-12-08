@@ -36,18 +36,17 @@ def tstx(paths, verbose, dry_run):
             continue
         try:
             exif = image._getexif()[36867]
-        except AttributeError:
-            logger.debug('    No EXIF attributes found.')
+            exif_datetime = Datetime.strptime(exif, '%Y:%m:%d %H:%M:%S')
+        except:
+            logger.debug('    No suitable EXIF data found.')
             continue
-        exif_datetime = Datetime.strptime(exif, '%Y:%m:%d %H:%M:%S')
         logger.debug('    EXIF date: {}'.format(exif_datetime))
-
 
         # prepare
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
         timestamp = exif_datetime.isoformat()
-        
+
         newbasename = '{}_{}'.format(timestamp, basename)
         newpath = os.path.join(dirname, newbasename)
         logger.debug('    Old name: %s', basename)
