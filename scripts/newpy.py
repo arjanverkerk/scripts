@@ -108,7 +108,7 @@ def newpy(target, executable, console):
         newfile.write(content)
 
     if executable:
-        os.chmod(target, 0755)
+        os.chmod(target, 0o0755)
 
 
 def main():
