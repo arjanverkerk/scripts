@@ -8,20 +8,21 @@ from __future__ import division
 # These are in a separate module so that symlinks can be made automatically.
 scripts = [
     # gis
-    'gis-bbox      = scripts.gis.bbox:main',
-    'gis-polygon   = scripts.gis.polygon:main',
-    'gis-sum       = scripts.gis.sum:main',
-    'gis-ogr-merge = scripts.gis.ogr_merge:main',
-    'gis-ogr-snap  = scripts.gis.ogr_snap:main',
+    'gis-bbox         = scripts.gis.bbox:main',
+    'gis-polygon      = scripts.gis.polygon:main',
+    'gis-sum          = scripts.gis.sum:main',
+    'gis-ogr-merge    = scripts.gis.ogr_merge:main',
+    'gis-ogr-snap     = scripts.gis.ogr_snap:main',
+    'gis-gdal-nan2ndv = scripts.gis.gdal_nan2ndv:nan2ndv',
     # gallery
-    'gallery       = scripts.gallery.gallery:main',
+    'gallery          = scripts.gallery.gallery:main',
     # various
-    'dbf2csv       = scripts.dbf2csv:main',
-    'gcalendar     = scripts.calendar:main',
-    'ln_scripts    = scripts.ln_scripts:main',
-    'newpy         = scripts.newpy:main',
-    'tstx         = scripts.tstx:main',
-    'tst         = scripts.tst:main',
+    'dbf2csv          = scripts.dbf2csv:main',
+    'gcalendar        = scripts.calendar:main',
+    'ln_scripts       = scripts.ln_scripts:main',
+    'newpy            = scripts.newpy:main',
+    'tstx             = scripts.tstx:main',
+    'tst              = scripts.tst:main',
 ]
 
 # Some extra commands to symlink
