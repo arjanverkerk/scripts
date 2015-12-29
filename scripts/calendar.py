@@ -52,8 +52,7 @@ def command(sourcepath, targetpath):
 
     # Here it all happens
     date = None  # Pyflakes.
-    for stringrecord in reader:
-        record = {k: unicode(v, 'utf-8') for k, v in stringrecord.items()}
+    for record in reader:
 
         # Take date from previous record if this one is empty
         current_record_date = record['datum'].replace('.', '-').strip()
@@ -61,7 +60,7 @@ def command(sourcepath, targetpath):
         time = record['tijd'].replace('.', ':').strip()
         dt1 = datetime.datetime.strptime(
             ' '.join([date, time]), '%d-%m %H:%M',
-        ).replace(year=2015)
+        ).replace(year=2016)
         dt2 = dt1 + datetime.timedelta(minutes=90)
 
         # Base data
@@ -76,17 +75,17 @@ def command(sourcepath, targetpath):
         organ = record['organist'].strip()
         if organ:
             result.update({'Subject': 'Orgel {}'.format(organ)})
-            writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
+            writer.writerow(result)
 
         piano = record['pianist'].strip()
         if piano:
             result.update({'Subject': 'Piano {}'.format(piano)})
-            writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
+            writer.writerow(result)
 
         team = record['MT'].replace('MT', '').strip()
         if team:
             result.update({'Subject': 'Muziekteam {}'.format(team)})
-            writer.writerow({k: v.encode('utf-8') for k, v in result.items()})
+            writer.writerow(result)
 
     sourcefile.close()
     targetfile.close()
