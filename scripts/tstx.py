@@ -47,16 +47,16 @@ def tstx(paths, verbose, dry_run):
         basename = os.path.basename(path)
         timestamp = exif_datetime.isoformat()
 
+        if basename.startswith(timestamp):
+            logger.debug('    Timestamp %s already present.', timestamp)
+            continue
+
         newbasename = '{}_{}'.format(timestamp, basename)
         newpath = os.path.join(dirname, newbasename)
         logger.debug('    Old name: %s', basename)
         logger.debug('    New name: %s', newbasename)
 
         if dry_run:
-            continue
-
-        if basename.startswith(timestamp):
-            logger.debug('    Timestamp %s already present.', timestamp)
             continue
 
         # rename
