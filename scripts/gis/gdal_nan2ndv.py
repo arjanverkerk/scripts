@@ -22,11 +22,11 @@ def replacenan(source_path, target_path):
     array = source.GetRasterBand(1).ReadAsArray()
     array[np.isnan(array)] = source.GetRasterBand(1).GetNoDataValue()
 
-    memory = gdal.GetDriverByName(b'mem').CreateCopy('', source)
+    memory = gdal.GetDriverByName(str('mem')).CreateCopy('', source)
     memory.GetRasterBand(1).WriteArray(array)
 
     options = ['compress=deflate', 'tiled=yes']
-    gdal.GetDriverByName(b'gtiff').CreateCopy(
+    gdal.GetDriverByName(str('gtiff')).CreateCopy(
         target_path, memory, options=options,
     )
 
