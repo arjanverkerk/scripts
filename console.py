@@ -20,6 +20,7 @@ scripts = [
     'gallery          = scripts.gallery.gallery:main',
     # various
     'newpy            = scripts.newpy:main',
+    'gpx-split        = scripts.gpx_split:main',
     'tst-now          = scripts.tst_now:main',
     'tst-exif         = scripts.tst_exif:main',
     'dbf2csv          = scripts.dbf2csv:main',

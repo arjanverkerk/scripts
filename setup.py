@@ -14,7 +14,6 @@ install_requires = [
     'h5py',
     'ipdb',
     'ipython',
-    'lz4',
     'markdown',
     'naw',
     'numpy',
