@@ -51,13 +51,8 @@ def main():
         level = logging.INFO
     logging.basicConfig(stream=sys.stderr, level=level, format='%(message)s')
 
-    # run or fail
-    try:
-        {name}(**kwargs)
-        return 0
-    except:
-        logger.exception('An exception has occurred.')
-        return 1
+    # run
+    {name}(**kwargs)
 '''
 
 RUNNER = '''

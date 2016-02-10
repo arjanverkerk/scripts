@@ -7,6 +7,8 @@ from __future__ import division
 
 # These are in a separate module so that symlinks can be made automatically.
 scripts = [
+    # symbolic linker
+    'ln_scripts       = scripts.ln_scripts:main',
     # gis
     'gis-bbox         = scripts.gis.bbox:main',
     'gis-polygon      = scripts.gis.polygon:main',
@@ -17,12 +19,13 @@ scripts = [
     # gallery
     'gallery          = scripts.gallery.gallery:main',
     # various
+    'newpy            = scripts.newpy:main',
+    'tst-now          = scripts.tst_now:main',
+    'tst-exif         = scripts.tst_exif:main',
     'dbf2csv          = scripts.dbf2csv:main',
     'gcalendar        = scripts.calendar:main',
-    'ln_scripts       = scripts.ln_scripts:main',
-    'newpy            = scripts.newpy:main',
-    'tstx             = scripts.tstx:main',
-    'tst              = scripts.tst:main',
+    'annotate         = scripts.annotate:main',
+    'enumerate        = scripts.enumerate:main',
 ]
 
 # Some extra commands to symlink
