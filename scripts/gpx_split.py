@@ -33,7 +33,7 @@ def split():
     for trk in trks:
         tree.append(trk)
         time = trk.find('gpx:trkseg/gpx:trkpt/gpx:time', ns).text
-        with open(time + '.gpx', 'w') as f:
+        with open(time + '.gpx', 'wb') as f:
             f.write(ElementTree.tostring(tree))
         tree.remove(trk)
 
