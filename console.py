@@ -17,6 +17,7 @@ scripts = [
     'gis-ogr-snap     = scripts.gis.ogr_snap:main',
     'gis-gdal-nan2ndv = scripts.gis.gdal_nan2ndv:nan2ndv',
     'gis-gdal-ndv2ndv = scripts.gis.gdal_ndv2ndv:main',
+    'gis-gdal-cut2ndv = scripts.gis.gdal_cut2ndv:main',
     # gallery
     'gallery          = scripts.gallery.gallery:main',
     # various

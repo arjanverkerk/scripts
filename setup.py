@@ -15,6 +15,7 @@ install_requires = [
     'ipdb',
     'ipython',
     'markdown',
+    'lz4',
     'naw',
     'numpy',
     'Pillow',
