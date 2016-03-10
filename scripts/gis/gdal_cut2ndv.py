@@ -33,7 +33,7 @@ def replace(source_path, target_path):
     target_no_data_value = np.finfo(dtype).max.item()
     condition = np.logical_or.reduce([
         source_values == source_no_data_value,
-        source_values < 1000,
+        source_values < -1000,
         source_values > 1000,
     ])
     target_values = np.where(condition, target_no_data_value, source_values)
