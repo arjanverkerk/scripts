@@ -8,20 +8,15 @@ name = 'scripts'
 version = '0.1'
 
 install_requires = [
-    'setuptools',
-    # And the rest
     'flake8',
-    'h5py',
+    'gdal',
     'ipdb',
     'ipython',
-    'markdown',
-    'lz4',
     'naw',
     'numpy',
-    'Pillow',
     'redis',
-    'requests',
     'scipy',
+    'setuptools',
 ]
 
 setup(
