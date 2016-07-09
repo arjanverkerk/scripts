@@ -120,7 +120,7 @@ class Catalog(object):
         for new in create:
             logger.debug('Calculate checksum for "{}".'.format(new))
             checksum = hashlib.md5(
-                open(os.path.join(self.path, new)).read(),
+                open(os.path.join(self.path, new), 'rb').read(),
             ).hexdigest()
             try:
                 # change name for existing title
