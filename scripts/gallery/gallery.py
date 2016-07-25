@@ -60,6 +60,7 @@ class Catalog(object):
         '.avi',
         '.mov',
         '.mp4',
+        '.ogg',
         '.ogv',
     ])
 
@@ -312,7 +313,7 @@ class VideoObject(MediaObject):
             command = ['ffmpeg2theora', '--info', self.path]
             devnull = open(os.devnull, 'w')
             output = subprocess.check_output(command, stderr=devnull)
-            info = json.loads(output)['video'][0]
+            info = json.loads(output.decode('ascii'))['video'][0]
             width, height = info['width'], info['height']
             video_ratio = min(VIDEO_WIDTH / width, VIDEO_HEIGHT / height)
             if video_ratio < 1:
