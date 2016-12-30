@@ -60,7 +60,7 @@ def command(sourcepath, targetpath):
         time = record['tijd'].replace('.', ':').strip()
         dt1 = datetime.datetime.strptime(
             ' '.join([date, time]), '%d-%m %H:%M',
-        ).replace(year=2016)
+        ).replace(year=2017)
         dt2 = dt1 + datetime.timedelta(minutes=90)
 
         # Base data
