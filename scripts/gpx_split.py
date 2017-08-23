@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 
+from os.path import exists
 import argparse
 import sys
 
@@ -31,8 +32,13 @@ def split():
     for trk in trks:
         tree.remove(trk)
     for trk in trks:
-        tree.append(trk)
+        # skip existing
         time = trk.find('gpx:trkseg/gpx:trkpt/gpx:time', ns).text
+        path = time + '.gpx'
+        if exists(path):
+            continue
+        # write tree with single track
+        tree.append(trk)
         with open(time + '.gpx', 'wb') as f:
             f.write(ElementTree.tostring(tree))
         tree.remove(trk)
