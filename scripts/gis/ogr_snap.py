@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" TODO Docstring. """
+""" Round coordinates in polygon geometries. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -7,12 +7,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
-import logging
-import sys
 
 from osgeo import ogr
-
-logger = logging.getLogger(__name__)
 
 
 def single(geometry):
@@ -34,8 +30,7 @@ def snap(source_path, target_path):
     layer1 = data_source1[0]
 
     # create target based on source
-    driver = ogr.GetDriverByName(b'ESRI Shapefile')
-    driver.DeleteDataSource(target_path)
+    driver = ogr.GetDriverByName(str('ESRI Shapefile'))
     data_source2 = driver.CreateDataSource(target_path)
     layer2 = data_source2.CreateLayer(
         target_path,
@@ -60,7 +55,6 @@ def snap(source_path, target_path):
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('source_path', metavar='SOURCE')
     parser.add_argument('target_path', metavar='TARGET')
     return parser
@@ -70,16 +64,4 @@ def main():
     """ Call snap with args from parser. """
     # logging
     kwargs = vars(get_parser().parse_args())
-    if kwargs.pop('verbose'):
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-    logging.basicConfig(stream=sys.stderr, level=level, format='%(message)s')
-
-    # run or fail
-    try:
-        snap(**kwargs)
-        return 0
-    except:
-        logger.exception('An exception has occurred.')
-        return 1
+    snap(**kwargs)
