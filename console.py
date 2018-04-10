@@ -29,6 +29,7 @@ scripts = [
     'gcalendar        = scripts.calendar:main',
     'annotate         = scripts.annotate:main',
     'enumerate        = scripts.enumerate:main',
+    'jrnl             = scripts.jrnl:main',
 ]
 
 # Some extra commands to symlink
