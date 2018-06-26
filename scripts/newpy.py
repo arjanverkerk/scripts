@@ -23,10 +23,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
-import logging
-import sys
-
-logger = logging.getLogger(__name__)
 
 
 def {name}():
@@ -36,23 +32,13 @@ def {name}():
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-v', '--verbose', action='store_true')
     # parser.add_argument('path', metavar='FILE')
     return parser
 
 
 def main():
     """ Call {name} with args from parser. """
-    # logging
-    kwargs = vars(get_parser().parse_args())
-    if kwargs.pop('verbose'):
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-    logging.basicConfig(stream=sys.stderr, level=level, format='%(message)s')
-
-    # run
-    {name}(**kwargs)
+    {name}(**vars(get_parser().parse_args()))
 '''
 
 RUNNER = '''
