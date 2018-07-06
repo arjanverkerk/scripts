@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" TODO Docstring. """
+""" Timekeeper. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -77,6 +77,7 @@ def initialize():
 
 
 def show_report():
+    """ Show some key-wise work time. """
     print('nothing here')
 
 
