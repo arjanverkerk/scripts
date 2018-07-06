@@ -9,11 +9,10 @@ version = '0.1'
 
 install_requires = [
     'flake8',
-    'pygdal',
-    'ipdb',
-    'ipython',
+    'h5py',
     'naw',
     'numpy',
+    'pygdal',
     'redis',
     'scipy',
 ]
