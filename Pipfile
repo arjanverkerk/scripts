@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+flake8 = "==2.6.2"
+ipdb = "==0.10.1"
+ipython = "==4.2.1"
+
+[packages]
+naw = {editable = true, git = "https://github.com/nens/naw.git", ref = "master"}
+pygdal = "==1.11.3.*"
+redis = "==2.10.5"
+scandir = "==1.5"
+six = "==1.10.0"
+turn = "==0.5"
+"e1839a8" = {path = ".", editable = true}
+
+[requires]
+python_version = "2.7"

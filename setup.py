@@ -9,14 +9,13 @@ version = '0.1'
 
 install_requires = [
     'flake8',
-    'gdal',
+    'pygdal',
     'ipdb',
     'ipython',
     'naw',
     'numpy',
     'redis',
     'scipy',
-    'setuptools',
 ]
 
 setup(
