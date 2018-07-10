@@ -4,19 +4,19 @@ scripts
 
 Requirements
 ------------
-apt install libgdal-dev libhdf5-serial-dev
+apt install libgdal-dev libhdf5-serial-dev libnetcdf-dev
 
 
 Install
 -------
+ln -s Pipfile$(lsb_release -sr | tr -d '.') Pipfile
 pipenv sync --dev
 
 
 Pipenv
 ------
-When the pipfile is modified and locking is needed, first comment the naw
-script in setup.py. It has no public download and therefore cannot be verified
-by pip.
+Any vcs checkouts are deliberately not included in any setup.py, since pip will
+fail miserably in finding a suitable package for it on the web.
 
 
 Gallery

@@ -10,11 +10,12 @@ version = '0.1'
 install_requires = [
     'flake8',
     'h5py',
-    'naw',
+    'netCDF4',
     'numpy',
     'pygdal',
     'redis',
     'scipy',
+    'six',
 ]
 
 setup(

@@ -1,3 +1,4 @@
+Pipfile
 *.py[cod]
 .venv
 scripts.egg-info/
