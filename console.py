@@ -36,6 +36,7 @@ scripts = [
 commands = [
     'flake8',
     'ipython',
-    'turn',
     'naw',
+    'python',
+    'turn',
 ]
