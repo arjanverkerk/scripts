@@ -14,10 +14,8 @@ import argparse
 import collections
 import hashlib
 import json
-import logging
 import os
 import subprocess
-import sys
 
 from PIL import Image
 
@@ -30,8 +28,6 @@ GRAPHIC_HEIGHT = 800
 THUMBNAIL_WIDTH = 75
 THUMBNAIL_HEIGHT = 75
 THUMBNAIL_SIZE = THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT
-
-logger = logging.getLogger(__name__)
 
 
 class TemplateLoader(object):
@@ -102,10 +98,10 @@ class Catalog(object):
         path = os.path.join(self.path, self.CATALOG)
         try:
             data = json.load(open(path))
-            logger.debug('Load existing {}'.format(path))
+            print('Load existing {}'.format(path))
         except IOError:
             data = {}
-            logger.debug('Start with new {}'.format(path))
+            print('Start with new {}'.format(path))
         self.gallery = data.get('gallery', 'Gallery')
         self.description = data.get('description', 'Description')
         self.titles = data.get('titles', {})
@@ -119,20 +115,20 @@ class Catalog(object):
         # handle new files
         create = names.difference(self.titles)
         for new in create:
-            logger.debug('Calculate checksum for "{}".'.format(new))
+            print('Calculate checksum for "{}".'.format(new))
             checksum = hashlib.md5(
                 open(os.path.join(self.path, new), 'rb').read(),
             ).hexdigest()
             try:
                 # change name for existing title
                 old = checksums[checksum]
-                logger.debug('Rename "{}" to "{}".'.format(old, new))
+                print('Rename "{}" to "{}".'.format(old, new))
                 self.titles[new] = self.titles[old]
                 del self.titles[old]
                 del self.checksums[old]
             except KeyError:
                 # add new name with dummy title
-                logger.debug('Add new file "{}".'.format(new))
+                print('Add new file "{}".'.format(new))
                 self.titles[new] = new
             finally:
                 self.checksums[new] = checksum
@@ -140,7 +136,7 @@ class Catalog(object):
         # now use the updated filenames to detect deleted files
         delete = set(self.titles).difference(names)
         for name in delete:
-            logger.debug('Remove file "{}".'.format(name))
+            print('Remove file "{}".'.format(name))
             del self.titles[name]
             del self.checksums[name]
 
@@ -164,7 +160,7 @@ class Catalog(object):
         with open(tmp_path, 'w') as tmp_file:
             json.dump(data, tmp_file, indent=2)
         os.rename(tmp_path, path)
-        logger.debug('Write config.')
+        print('Write config.')
 
     def objects(self):
         yield HeaderObject(title=self.gallery,
@@ -226,9 +222,9 @@ class MediaObject(object):
 
         # resample for graphic
         if os.path.exists(graphic_path):
-            logger.debug('Skip {}'.format(graphic_path))
+            print('Skip {}'.format(graphic_path))
         else:
-            logger.debug('Create {}'.format(graphic_path))
+            print('Create {}'.format(graphic_path))
             ratio = min(GRAPHIC_WIDTH / width, GRAPHIC_HEIGHT / height)
             size = (int(width * ratio), int(height * ratio))
             graphic = source.resize(size, resample)
@@ -236,9 +232,9 @@ class MediaObject(object):
 
         # resample for thumbnail
         if os.path.exists(thumbnail_path):
-            logger.debug('Skip {}'.format(thumbnail_path))
+            print('Skip {}'.format(thumbnail_path))
         else:
-            logger.debug('Create {}'.format(thumbnail_path))
+            print('Create {}'.format(thumbnail_path))
             ratio = max(THUMBNAIL_WIDTH / width, THUMBNAIL_HEIGHT / height)
             size = (int(width * ratio), int(height * ratio))
             resample = source.resize(size, resample)
@@ -248,7 +244,7 @@ class MediaObject(object):
             offset = (int((thumbnail_size - size[0]) / 2),
                       int((thumbnail_size - size[1]) / 2))
 
-            thumbnail = Image.new('RGBA', THUMBNAIL_SIZE, (255, 255, 255, 0))
+            thumbnail = Image.new('RGB', THUMBNAIL_SIZE, (255, 255, 255))
             thumbnail.paste(resample, offset)
             thumbnail.save(thumbnail_path)
 
@@ -305,9 +301,9 @@ class VideoObject(MediaObject):
         # video
         path = self.video['absolute']
         if os.path.exists(path):
-            logger.debug('Skip {}'.format(path))
+            print('Skip {}'.format(path))
         else:
-            logger.debug('Create {}'.format(path))
+            print('Create {}'.format(path))
 
             # determine size
             command = ['ffmpeg2theora', '--info', self.path]
@@ -394,14 +390,14 @@ def gallery(source, gallery):
 
     # conversion yields pieces of the index page
     path = os.path.join(gallery, 'index.html')
-    logger.debug('Write {}'.format(path))
+    print('Write {}'.format(path))
     with open(path, 'w') as index:
         for obj in catalog.objects():
             index.write(obj.process(gallery=gallery))
 
     # rebuild index here
     path = os.path.join('index.html')
-    logger.debug('Write {}'.format(path))
+    print('Write {}'.format(path))
     rebuild()
     return 0
 
@@ -420,14 +416,4 @@ def get_parser():
 def main():
     """ Call command with args from parser. """
     kwargs = vars(get_parser().parse_args())
-
-    logging.basicConfig(stream=sys.stderr,
-                        level=logging.DEBUG,
-                        format='%(message)s')
-
-    try:
-        gallery(**kwargs)
-        return 0
-    except:
-        logger.exception('An exception has occurred.')
-        return 1
+    gallery(**kwargs)

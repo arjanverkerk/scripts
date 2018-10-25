@@ -12,9 +12,9 @@ install_requires = [
     'h5py',
     'netCDF4',
     'numpy',
+    'Pillow',
     'pygdal',
     'redis',
-    'scipy',
     'six',
 ]
 
