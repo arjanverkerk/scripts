@@ -330,7 +330,7 @@ class VideoObject(MediaObject):
                        '-6', 'dpl2',
                        '-R', 'Auto',
                        '-D', '0.0',
-                       '--audio-copy-mask', 'aac,ac3,dtshd,dts,mp3'
+                       # '--audio-copy-mask', 'aac,ac3,dtshd,dts,mp3'
                        '--audio-fallback', 'ffac3',
                        '-f', 'mp4',
                        # '-X', '1280',
