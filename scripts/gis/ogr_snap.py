@@ -46,10 +46,11 @@ def snap(source_path, target_path):
 
     # write (modified) data
     total = layer1.GetFeatureCount()
-    for count, feature1 in enumerate(layer1, 1):
+    for count in range(total):
+        feature1 = layer1[count]
         feature1.SetGeometry(single(feature1.geometry()))
         layer2.CreateFeature(feature1)
-        ogr.TermProgress_nocb(count / total)
+        ogr.TermProgress_nocb((count + 1) / total)
 
 
 def get_parser():
