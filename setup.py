@@ -10,6 +10,7 @@ version = '0.1'
 install_requires = [
     'flake8',
     'h5py',
+    'lz4',
     'netCDF4',
     'numpy',
     'Pillow',
