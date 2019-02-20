@@ -78,10 +78,13 @@ class Logs():
     @classmethod
     def cat(cls):
         with open(LOGPATH) as logfile:
-            return print(logfile.read())
+            return print(logfile.read().strip())
 
     @classmethod
     def report(cls):
+        if not exists(LOGPATH):
+            return
+
         result = collections.defaultdict(Timedelta)
         with open(LOGPATH) as logfile:
 
