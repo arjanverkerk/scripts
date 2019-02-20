@@ -70,12 +70,6 @@ class Keys():
 
 class Logs():
     @classmethod
-    def initialize(cls, key):
-        if exists(LOGPATH):
-            return
-        cls.write(key, prefix='')
-
-    @classmethod
     def write(cls, key, prefix='\n'):
         now = Datetime.now().strftime(TIME_FORMAT)
         with open(LOGPATH, 'a') as logfile:
