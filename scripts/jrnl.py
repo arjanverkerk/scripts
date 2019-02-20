@@ -108,7 +108,8 @@ class Logs():
             # add unfinished time
             result[previous_key] += NOW - previous_datetime
 
-        for key, value in result.items():
+        items = [(v, k) for k, v in result.items()]
+        for value, key in sorted(items, reverse=True):
             print(remove_micros(value), key)
 
 
