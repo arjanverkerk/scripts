@@ -2,7 +2,7 @@
 """
 Timekeeper.
 
-Call without arguments for todays report.
+Call without arguments for today's report.
 """
 
 from __future__ import print_function
@@ -25,7 +25,7 @@ HOME = os.environ['HOME']
 DIRNAME = '.jrnl'
 DIRPATH = join(HOME, DIRNAME)
 
-LOGFORMAT = join(DIRPATH, '%Y-%m-%d_log')
+LOGFORMAT = join(DIRPATH, '%Y-%m-%d.log')
 LOGPATH = NOW.strftime(LOGFORMAT)
 
 KEYPATH = join(DIRPATH, 'keys')
