@@ -22,7 +22,6 @@ scripts = [
     'gallery          = scripts.gallery.gallery:main',
     # various
     'newpy            = scripts.newpy:main',
-    'gpx-split        = scripts.gpx_split:main',
     'tst-now          = scripts.tst.tst_now:main',
     'tst-exif         = scripts.tst.tst_exif:main',
     'dbf2csv          = scripts.dbf2csv:main',
@@ -30,6 +29,7 @@ scripts = [
     'annotate         = scripts.annotate:main',
     'enumerate        = scripts.enumerate:main',
     'jrnl             = scripts.jrnl:main',
+    'track            = scripts.track:main',
 ]
 
 # Some extra commands to symlink

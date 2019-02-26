@@ -9,7 +9,6 @@ apt install libgdal-dev libhdf5-serial-dev libnetcdf-dev
 
 Install
 -------
-ln -s Pipfile$(lsb_release -sr | tr -d '.') Pipfile
 pipenv sync --dev
 
 
