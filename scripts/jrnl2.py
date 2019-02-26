@@ -1,23 +1,34 @@
 from curses import wrapper
+from curses import echo
 from curses import curs_set
 
 import time
+from datetime import datetime as Datetime
 
-def main(stdscr):
+"""
+Key to add key
+Keys to select
+"""
+
+def main(window):
     # no cursor
     curs_set(0)
+    
+    # echo on, because wrapper disables it
+    echo()
 
-    # Clear screen
-    stdscr.clear()
+    # window.clear()
+    # window.refresh()
 
-    # This raises ZeroDivisionError when i == 10.
-    stdscr.addstr(5, 5, 'test')
-    stdscr.refresh()
-    time.sleep(1)
 
-    stdscr.addstr(6, 5, 'test two')
-    time.sleep(1)
-    stdscr.refresh()
-    time.sleep(1)
+    window.timeout(1000)
+    window.addstr(5, 5, 'test')
+    window.addstr(6, 5, 'test two')
+
+    while True:
+        c = window.getch(10, 10)
+        if c == ord('q'):
+            break
+        window.addstr(7, 5, str(Datetime.now()))
 
 wrapper(main)
