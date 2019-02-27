@@ -8,8 +8,15 @@ from datetime import datetime as Datetime
 import argparse
 
 """
+Update the clocks in a thread
+Extend the header number, key, time, active
+Number the keys
+Move keys
 Remove keys
 Select keys
+Track keys
+Export / import functionality
+Update loop updating clock and active key
 """
 
 
