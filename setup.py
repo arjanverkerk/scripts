@@ -14,7 +14,7 @@ install_requires = [
     'netCDF4',
     'numpy',
     'Pillow',
-    # 'pygdal',
+    'pygdal',
     'redis',
     'six',
 ]
