@@ -4,9 +4,8 @@ Timetracker using curses.
 """
 from curses import curs_set, echo, noecho, wrapper
 from datetime import datetime as Datetime
-
-import argparse
-import threading
+from time import sleep
+from threading import Thread
 
 """
 Update the clocks in a thread
@@ -20,18 +19,25 @@ Export / import functionality
 Update loop updating clock and active key
 """
 
+update_items = set()
 
+
+def update():
+    while True:
+        for item in update_items:
+            item.update()
+        sleep(1)
 
 
 class Clock(object):
     def __init__(self, window):
         self.window = window.subwin(3, 10, 1, 1)
-        # self.window=window
-        self.window.border()
         self.update()
 
     def update(self):
+        original = self.window.getyx()
         self.window.addstr(1, 1, str(Datetime.now().strftime('%H:%M:%S')))
+        self.window.move(*original)
         self.window.refresh()
 
 
@@ -48,7 +54,6 @@ def deactivate(window):
 
 
 def track(window, **kwargs):
-    window.border()
     deactivate(window)
     keys = set()
 
@@ -56,10 +61,16 @@ def track(window, **kwargs):
     window.addstr(5, 1, 'allowed keys')
     window.addstr(6, 1, '------------')
 
+    # clock
     clock = Clock(window)
+    update_items.add(clock)
+
+    # update thread
+    updater = Thread(target=update)
+    updater.daemon = True
+    updater.start()
 
     while True:
-        clock.update()
         c = window.getch(10, 10)
         if c == ord('q'):
             break
@@ -75,16 +86,8 @@ def track(window, **kwargs):
                 window.addstr(7 + i, 1, '[ ] %d %s' % (i, k))
 
 
-def get_parser():
-    """ Return argument parser. """
-    parser = argparse.ArgumentParser(description=__doc__)
-    return parser
-
-
 def main():
-    """ Call jrnl with args from parser. """
-    kwargs = vars(get_parser().parse_args())
-    wrapper(track, **kwargs)
+    wrapper(track)
 
 
 if __name__ == '__main__':
