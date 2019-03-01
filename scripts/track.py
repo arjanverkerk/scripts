@@ -4,6 +4,7 @@ Timetracker using curses.
 """
 from curses import curs_set, echo, noecho, wrapper
 from datetime import datetime as Datetime
+from logging import basicConfig, getLogger, DEBUG
 from time import sleep
 from threading import Thread
 
@@ -19,6 +20,7 @@ Export / import functionality
 Update loop updating clock and active key
 """
 
+logger = getLogger()
 update_items = set()
 
 
@@ -38,6 +40,7 @@ class Clock(object):
         original = self.window.getyx()
         self.window.addstr(1, 1, str(Datetime.now().strftime('%H:%M:%S')))
         self.window.move(*original)
+        logger.info(original)
         self.window.refresh()
 
 
@@ -87,6 +90,8 @@ def track(window, **kwargs):
 
 
 def main():
+    basicConfig(filename='track.log', level=DEBUG)
+    logger.info('starting')
     wrapper(track)
 
 
