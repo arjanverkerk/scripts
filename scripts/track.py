@@ -11,8 +11,6 @@ The goal is that numbers select the current line
 Idea is that clock of active line is added to updater, and not the rest.
 Use insert and delete lines to shift header and footer automatically
 """
-FMT = '%H:%M:%S'
-
 logger = getLogger()
 
 
@@ -28,14 +26,6 @@ class Updater(set):
     def update(self):
         for item in self:
             item.update()
-
-
-class Clock(Widget):
-    """ Clock. """
-    def update(self):
-        content = str(Datetime.now().strftime(FMT))
-        self.window.addstr(self.y, self.x, content)
-        self.window.refresh()
 
 
 class Chart(Widget):
@@ -55,13 +45,24 @@ class Chart(Widget):
         self.window.addstr(self.y + 1, 0, self.spacer)
 
         # row
-        self.row = '{:d}  {:<12s}  00:00:00'
+        self.row = '{}  {}'
         self.width = 25
+
+        # active item
+        self._active = None
+
+    def add(self, name):
+        self.items.append(Activity(name))
+
+    def toggle(self, item):
+        pass  # TODO
+        
+        
 
     def update(self):
         for no, item in enumerate(self.items, 1):
-            attr = A_BOLD if no % 2 else A_NORMAL
-            row = self.row.format(no, str(item))
+            attr = A_BOLD if item.active else A_NORMAL
+            row = self.row.format(str(no), str(item))  # should not need str?
             self.window.addstr(self.y + no + 1, 0, row, attr)
         self.window.addstr(self.y + no + 2, 0, self.spacer)
         self.window.addstr(self.y + no + 3, 0, self.footer)
@@ -70,32 +71,54 @@ class Chart(Widget):
 class Activity(object):
     """ Key and time. """
     def __init__(self, key):
-        self.time = Timedelta()
+        self.previous = Timedelta()
+        self.last = None
         self.key = key
 
+    def start(self):
+        self.last = Datetime.now()
+
+    def stop(self):
+        self.previous += Datetime.now() - self.last
+        self.last = None
+
+    @property
+    def time(self):
+        """ Combine previous and the elapsed until now. Rounds to seconds. """
+        result = self.previous
+        if self.active:
+            result += Datetime.now() - self.last
+        return result
+
+    @property
+    def active(self):
+        return self.last is not None
+
     def __str__(self):
-        return self.key
+        time = self.time
+        time -= Timedelta(microseconds=time.microseconds)  # strip micros
+        return '{:<12s}  {:>8s}'.format(self.key, str(time))
 
 
 class Reader(Widget):
     """ Read text. """
-    def pre(self):
+    def _pre(self):
         self.window.timeout(-1)
         curs_set(1)
         echo()
 
-    def post(self):
+    def _post(self):
         self.window.timeout(1000)
         curs_set(0)
         noecho()
 
     def read(self, message, length):
-        self.pre()
+        self._pre()
         self.window.addstr(self.y, self.x, message)
         position = self.x + len(message)
         result = self.window.getstr(self.y, position, length).decode('utf-8')
         self.window.addstr(self.y, self.x, ' ' * (len(message) + length))
-        self.post()
+        self._post()
         return result
 
 
@@ -105,19 +128,19 @@ def track(window, **kwargs):
     curs_set(0)
     noecho()
 
-    # clock & chart
-    clock = Clock(window, 0, 19)
-    chart = Chart(window, 2, 0)
+    # chart
+    chart = Chart(window, 1, 0)
 
     # initial testdata
     chart.items.append(Activity('zingen'))
     chart.items.append(Activity('vechten'))
     chart.items.append(Activity('lachen'))
+    chart.items[0].start()
 
-    updater = Updater([clock, chart])
+    updater = Updater([chart])
     updater.update()
 
-    reader = Reader(window, 1, 0)
+    reader = Reader(window, 0, 0)
 
     # main loop
     while True:
