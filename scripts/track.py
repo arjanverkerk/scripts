@@ -144,7 +144,7 @@ def track(window, **kwargs):
         c = window.getch(0, 0)
         if c == ord('q'):
             break
-        if c == ord('a'):
+        if c == ord('a') and len(chart) < 9:
             name = reader.read('New activity: ', 12)
             chart.add(name)
         if ord('1') <= c <= ord(str((len(chart)))):
