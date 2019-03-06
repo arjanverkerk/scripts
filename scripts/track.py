@@ -4,28 +4,14 @@ Timetracker using curses.
 """
 from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
-from logging import basicConfig, getLogger, DEBUG
-
-"""
-The goal is that numbers select the current line
-Idea is that clock of active line is added to updater, and not the rest.
-Use insert and delete lines to shift header and footer automatically
-"""
-logger = getLogger()
 
 
 class Widget(object):
+    """ Anything with a fixed location in a window. """
     def __init__(self, window, y, x):
         self.window = window
         self.y = y
         self.x = x
-
-
-class Updater(set):
-    """ Container for updateables. """
-    def update(self):
-        for item in self:
-            item.update()
 
 
 class Chart(Widget):
@@ -33,39 +19,59 @@ class Chart(Widget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # table
+        header = '#    activity      time  '
+        spacer = '-  ------------  --------'
+        footer = 'press a to add, q to quit'
+        self.window.addstr(self.y + 0, 0, header)
+        self.window.addstr(self.y + 1, 0, spacer)
+        self.window.addstr(self.y + 2, 0, spacer)
+        self.window.addstr(self.y + 3, 0, footer)
+
+        # stack
         self.items = []
+        self.active = []
 
-        # scaffolding
-        self.header = '#    activity      time  '
-        self.spacer = '-  ------------  --------'
-        self.footer = 'press a to add, q to quit'
+        # idle
+        self.add('idle')
+        self.toggle(1)
 
-        # init
-        self.window.addstr(self.y + 0, 0, self.header)
-        self.window.addstr(self.y + 1, 0, self.spacer)
-
-        # row
-        self.row = '{}  {}'
-        self.width = 25
-
-        # active item
-        self._active = None
+    def __len__(self):
+        return len(self.items)
 
     def add(self, name):
-        self.items.append(Activity(name))
+        """ Add an activity. """
+        self.window.move(self.y + 2 + len(self.items), 0)
+        self.window.insertln()
+        item = Activity(name)
+        self.items.append(item)
+        self.draw(item)
 
-    def toggle(self, item):
-        pass  # TODO
-        
-        
+    def draw(self, item):
+        """ Draw item. """
+        no = self.items.index(item) + 1
+        attr = A_BOLD if item.active else A_NORMAL
+        row = str(no) + '  ' + str(item)
+        self.window.addstr(self.y + no + 1, 0, row, attr)
+
+    def toggle(self, no):
+        """ Disable all active items, enable item with number no. """
+        # disable
+        while self.active:
+            item = self.active.pop()
+            item.stop()
+            self.draw(item)
+
+        # enable
+        item = self.items[no - 1]
+        item.start()
+        self.draw(item)
+        self.active.append(item)
 
     def update(self):
-        for no, item in enumerate(self.items, 1):
-            attr = A_BOLD if item.active else A_NORMAL
-            row = self.row.format(str(no), str(item))  # should not need str?
-            self.window.addstr(self.y + no + 1, 0, row, attr)
-        self.window.addstr(self.y + no + 2, 0, self.spacer)
-        self.window.addstr(self.y + no + 3, 0, self.footer)
+        """ Draw active item. """
+        for item in self.active:
+            self.draw(item)
 
 
 class Activity(object):
@@ -84,7 +90,7 @@ class Activity(object):
 
     @property
     def time(self):
-        """ Combine previous and the elapsed until now. Rounds to seconds. """
+        """ Return combined previous and elapsed time, rounded to seconds. """
         result = self.previous
         if self.active:
             result += Datetime.now() - self.last
@@ -128,19 +134,10 @@ def track(window, **kwargs):
     curs_set(0)
     noecho()
 
-    # chart
-    chart = Chart(window, 1, 0)
-
-    # initial testdata
-    chart.items.append(Activity('zingen'))
-    chart.items.append(Activity('vechten'))
-    chart.items.append(Activity('lachen'))
-    chart.items[0].start()
-
-    updater = Updater([chart])
-    updater.update()
-
+    # widgets
     reader = Reader(window, 0, 0)
+    chart = Chart(window, 1, 0)
+    chart.update()
 
     # main loop
     while True:
@@ -148,26 +145,14 @@ def track(window, **kwargs):
         if c == ord('q'):
             break
         if c == ord('a'):
-            item = reader.read('New activity: ', 12)
-            chart.items.append(Activity(item))
-        if c == ord('x'):
-            pass  # TODO remove active line
-            logger.info(c)
-        if c == ord('j'):
-            pass  # TODO move active line up
-            logger.info(c)
-        if c == ord('k'):
-            pass  # TODO move active line down
-            logger.info(c)
-        if ord('0') <= c <= ord('9'):
-            pass  # TODO toggle activity
-            logger.info(c)
-        updater.update()
+            name = reader.read('New activity: ', 12)
+            chart.add(name)
+        if ord('1') <= c <= ord(str((len(chart)))):
+            chart.toggle(c - ord('0'))
+        chart.update()
 
 
 def main():
-    basicConfig(filename='track.log', level=DEBUG)
-    logger.info(80 * '-')
     wrapper(track)
 
 
