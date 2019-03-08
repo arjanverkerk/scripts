@@ -7,6 +7,7 @@ TODO
 - think about the limit on keys - maybe add letters, F-keys
 - commandline add a backup file to create or resume
 - write on each toggle or addition (so, update())
+- Enable untoggling and save that to disk as well
 - using it in an alias can put a week number in it
 - make the file a stream of changes that can be replayed, like:
     timestamp, key, elapsed time  # time is the total time
@@ -14,6 +15,7 @@ TODO
 """
 from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 
 class Widget(object):
@@ -26,7 +28,7 @@ class Widget(object):
 
 class Chart(Widget):
     """ The main table. """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # table
@@ -42,9 +44,13 @@ class Chart(Widget):
         self.items = []
         self.active = []
 
-        # idle
-        self.add('idle')
-        self.toggle(1)
+        # backup
+        self.path = path
+        if self.path:
+            self.load()
+        else:
+            self.add('idle')
+            self.toggle(1)
 
     def __len__(self):
         return len(self.items)
@@ -138,16 +144,15 @@ class Reader(Widget):
         return result
 
 
-def track(window, **kwargs):
+def track(window, path):
     # general
     window.timeout(1000)
     curs_set(0)
     noecho()
 
     # widgets
-    reader = Reader(window, 0, 0)
-    chart = Chart(window, 1, 0)
-    chart.update()
+    reader = Reader(window=window, y=0, x=0)
+    chart = Chart(path=path, window=window, y=1, x=0)
 
     # main loop
     while True:
@@ -162,8 +167,19 @@ def track(window, **kwargs):
         chart.update()
 
 
+def get_parser():
+    """ Return argument parser. """
+    parser = ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    parser.add_argument('path', nargs='?', metavar='FILE')
+    return parser
+
+
 def main():
-    wrapper(track)
+    """ Call wrapped track with args from parser. """
+    wrapper(track, **vars(get_parser().parse_args()))
 
 
 if __name__ == '__main__':
