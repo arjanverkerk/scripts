@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Timetracker using curses.
+
+TODO
+- commandline add a backup file to create or resume
+- write on each toggle or addition
+- using it in an alias can put a week number in it
+- think about the limit on keys - maybe add letters, F-keys
 """
 from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
