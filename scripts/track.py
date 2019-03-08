@@ -3,10 +3,14 @@
 Timetracker using curses.
 
 TODO
-- commandline add a backup file to create or resume
-- write on each toggle or addition
-- using it in an alias can put a week number in it
+- keys must be unique
 - think about the limit on keys - maybe add letters, F-keys
+- commandline add a backup file to create or resume
+- write on each toggle or addition (so, update())
+- using it in an alias can put a week number in it
+- make the file a stream of changes that can be replayed, like:
+    timestamp, key, elapsed time  # time is the total time
+- chart can init from file and has a file attached to it, then.
 """
 from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
