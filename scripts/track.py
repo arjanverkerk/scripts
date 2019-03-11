@@ -2,20 +2,23 @@
 """
 Timetracker using curses.
 
-TODO
-- keys must be unique
-- think about the limit on keys - maybe add letters, F-keys
-- commandline add a backup file to create or resume
-- write on each toggle or addition (so, update())
-- Enable untoggling and save that to disk as well
-- using it in an alias can put a week number in it
-- make the file a stream of changes that can be replayed, like:
-    timestamp, key, elapsed time  # time is the total time
-- chart can init from file and has a file attached to it, then.
+Room for improvement:
+- More keys, letters or F-keys maybe.
+- A message when a duplicate name is rejected.
+- An automatic backup even when activities are not switched.
 """
+
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from os.path import exists
+
+DATE = '%Y-%m-%d %H:%M:%S'
+NAMEWIDTH = 12
+NAMESTART = len(DATE) + 3  # two extra for the year expansion
+NAMESLICE = slice(NAMESTART, NAMESTART + NAMEWIDTH)
+TIMESLICE = slice(NAMESLICE.stop + 1, None)
+ACTIVITYRECORD = '%s {name:<%ss} {time}\n' % (DATE, NAMEWIDTH)
 
 
 class Widget(object):
@@ -41,85 +44,123 @@ class Chart(Widget):
         self.window.addstr(self.y + 3, 0, footer)
 
         # stack
-        self.items = []
+        self._items = []
         self.active = []
 
         # backup
         self.path = path
-        if self.path:
-            self.load()
+        if self.path is not None and exists(self.path):
+            self._load()
         else:
             self.add('idle')
             self.toggle(1)
 
     def __len__(self):
-        return len(self.items)
+        return len(self._items)
 
-    def add(self, name):
-        """ Add an activity. """
-        self.window.move(self.y + 2 + len(self.items), 0)
-        self.window.insertln()
-        item = Activity(name)
-        self.items.append(item)
-        self.draw(item)
+    def _load(self):
+        """ Restore state from file. """
+        # parser for the file
+        def parse(f):
+            for line in f:
+                yield line[NAMESLICE].strip(), float(line[TIMESLICE])
 
-    def draw(self, item):
+        # aggregate into dict
+        with open(self.path) as f:
+            names_and_times = {name: time for name, time in parse(f)}
+
+        # add them
+        for name, time in names_and_times.items():
+            self.add(name=name, time=time)
+
+    def _draw(self, item):
         """ Draw item. """
-        no = self.items.index(item) + 1
+        no = self._items.index(item) + 1
         attr = A_BOLD if item.active else A_NORMAL
         row = str(no) + '  ' + str(item)
         self.window.addstr(self.y + no + 1, 0, row, attr)
 
-    def toggle(self, no):
-        """ Disable all active items, enable item with number no. """
-        # disable
+    def _disable(self):
+        """
+        Disable any active items.
+
+        Records final time if there is a path.
+        """
         while self.active:
+            # disable
             item = self.active.pop()
             item.stop()
-            self.draw(item)
+            self._draw(item)
+            # log state of item
+            if self.path:
+                template = Datetime.now().strftime(ACTIVITYRECORD)
+                name = item.name
+                time = item.time.total_seconds()
+                with open(self.path, 'a') as f:
+                    f.write(template.format(name=name, time=time))
 
-        # enable
-        item = self.items[no - 1]
+    def _enable(self, no):
+        """ Enable item with number no. """
+        item = self._items[no - 1]
         item.start()
-        self.draw(item)
+        self._draw(item)
         self.active.append(item)
+
+    def add(self, name, time=0):
+        """ Add an activity. """
+        # prevent duplicates
+        if name in [i.name for i in self._items]:
+            return
+
+        # add item
+        self.window.move(self.y + 2 + len(self._items), 0)
+        self.window.insertln()
+        item = Activity(name=name, time=time)
+        self._items.append(item)
+        self._draw(item)
+
+    def toggle(self, no=None):
+        """ Disable all active items, enable item with number no. """
+        self._disable()
+        if no is not None:
+            self._enable(no)
 
     def update(self):
         """ Draw active item. """
         for item in self.active:
-            self.draw(item)
+            self._draw(item)
 
 
 class Activity(object):
-    """ Key and time. """
-    def __init__(self, key):
-        self.previous = Timedelta()
-        self.last = None
-        self.key = key
+    """ Name and time. """
+    def __init__(self, name, time):
+        self._previous = Timedelta(seconds=time)
+        self._last = None
+        self.name = name
 
     def start(self):
-        self.last = Datetime.now()
+        self._last = Datetime.now()
 
     def stop(self):
-        self.previous += Datetime.now() - self.last
-        self.last = None
+        self._previous += Datetime.now() - self._last
+        self._last = None
 
     @property
     def time(self):
         """ Return combined previous and elapsed time, rounded to seconds. """
-        result = self.previous
+        result = self._previous
         if self.active:
-            result += Datetime.now() - self.last
+            result += Datetime.now() - self._last
         return result
 
     @property
     def active(self):
-        return self.last is not None
+        return self._last is not None
 
     def __str__(self):
         time = self.time
         time -= Timedelta(microseconds=time.microseconds)  # strip micros
-        return '{:<12s}  {:>8s}'.format(self.key, str(time))
+        return '{:<12s}  {:>8s}'.format(self.name, str(time))
 
 
 class Reader(Widget):
@@ -158,9 +199,10 @@ def track(window, path):
     while True:
         c = window.getch(0, 0)
         if c == ord('q'):
+            chart.toggle()
             break
         if c == ord('a') and len(chart) < 9:
-            name = reader.read('New activity: ', 12)
+            name = reader.read('New activity: ', NAMEWIDTH)
             chart.add(name)
         if ord('1') <= c <= ord(str((len(chart)))):
             chart.toggle(c - ord('0'))
@@ -173,7 +215,12 @@ def get_parser():
         description=__doc__,
         formatter_class=RawDescriptionHelpFormatter,
     )
-    parser.add_argument('path', nargs='?', metavar='FILE')
+    parser.add_argument(
+        'path',
+        nargs='?',
+        metavar='FILE',
+        help='File to use for backup and restore.'
+    )
     return parser
 
 
