@@ -2,9 +2,13 @@
 """
 Timetracker using curses.
 
-Room for improvement:
-- A message with timeout when a duplicate name is rejected at first row.
-- An automatic backup even when activities are not switched.
+Roadmap:
+- Replace footer with dynamic message line on top:
+    - Default to what is now the footer
+    - Temporary change for new activity input
+    - Temporary change with a timeout for error messages
+    - Permanently changes when all keys are used
+- An automatic backup every 5 minutes even when activities are not switched.
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -54,7 +58,7 @@ class Chart(Widget):
             self._load()
         else:
             self.add('idle')
-            self.toggle(1)
+        self.toggle(KEYS[0])
 
     def __len__(self):
         return len(self._items)
