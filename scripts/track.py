@@ -12,7 +12,7 @@ Roadmap:
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
+from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL, use_default_colors
 from datetime import datetime as Datetime, timedelta as Timedelta
 from os.path import exists
 
@@ -43,7 +43,7 @@ class Chart(Widget):
         header = '#    activity      time  '
         spacer = '-  ------------  --------'
         footer = 'press a to add, q to quit'
-        self.window.addstr(self.y + 0, 0, header)
+        self.window.addstr(self.y + 0, 0, header, A_BOLD)
         self.window.addstr(self.y + 1, 0, spacer)
         self.window.addstr(self.y + 2, 0, spacer)
         self.window.addstr(self.y + 3, 0, footer)
@@ -193,6 +193,7 @@ class Reader(Widget):
 
 def track(window, path):
     # general
+    use_default_colors()
     window.timeout(1000)
     curs_set(0)
     noecho()
