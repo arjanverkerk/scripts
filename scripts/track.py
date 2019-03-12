@@ -12,7 +12,8 @@ Roadmap:
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL, use_default_colors
+from curses import A_BOLD, A_NORMAL
+from curses import curs_set, echo, noecho, wrapper, use_default_colors
 from datetime import datetime as Datetime, timedelta as Timedelta
 from os.path import exists
 
