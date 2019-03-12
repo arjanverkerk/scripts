@@ -3,12 +3,9 @@
 Timetracker using curses.
 
 Roadmap:
-- Replace footer with dynamic message line on top:
-    - Default to what is now the footer
-    - Temporary change for new activity input
-    - Temporary change with a timeout for error messages
-    - Permanently changes when all keys are used
+- Make name in chart tests possible instead of return codes
 - An automatic backup every 5 minutes even when activities are not switched.
+- Prevent blank activities
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -17,10 +14,15 @@ from curses import curs_set, echo, noecho, wrapper, use_default_colors
 from datetime import datetime as Datetime, timedelta as Timedelta
 from os.path import exists
 
+# key definitions
 KEYS = '123456789bcdefghijklmoprstuvwxyz'
 ORDS = [ord(k) for k in KEYS]
-DATE = '%Y-%m-%d %H:%M:%S'
+
+# width of activity names
 NAMEWIDTH = 12
+
+# stored record configuration
+DATE = '%Y-%m-%d %H:%M:%S'
 NAMESTART = len(DATE) + 3  # two extra for the year expansion
 NAMESLICE = slice(NAMESTART, NAMESTART + NAMEWIDTH)
 TIMESLICE = slice(NAMESLICE.stop + 1, None)
@@ -35,6 +37,53 @@ class Widget(object):
         self.x = x
 
 
+class Line(Widget):
+    """ Mulifunctional statusline. """
+    WIDTH = 25
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._text = 'press a to add, q to quit'
+        self._reset = None
+        self._draw(self._text)
+
+    def display(self, text, timeout=None):
+        if timeout is None:
+            self._text = text
+        else:
+            self._reset = Datetime.now() + Timedelta(seconds=timeout)
+        self._draw(text)
+
+    def update(self):
+        """ Call draw if """
+        if self._reset is not None and self._reset < Datetime.now():
+            self._draw(self._text)
+            self._reset = None
+
+    def read(self, text, length):
+        self._pre()
+        self._draw(text)
+        position = self.x + len(text)
+        result = self.window.getstr(self.y, position, length).decode('utf-8')
+
+        self._post()
+        return result
+
+    def _draw(self, text):
+        blank = ' ' * (self.WIDTH - len(text))
+        self.window.addstr(self.y, self.x, text + blank)
+
+    def _pre(self):
+        self.window.timeout(-1)
+        curs_set(1)
+        echo()
+
+    def _post(self):
+        self.window.timeout(1000)
+        curs_set(0)
+        noecho()
+
+
 class Chart(Widget):
     """ The main table. """
     def __init__(self, path, *args, **kwargs):
@@ -43,11 +92,9 @@ class Chart(Widget):
         # table
         header = '#    activity      time  '
         spacer = '-  ------------  --------'
-        footer = 'press a to add, q to quit'
         self.window.addstr(self.y + 0, 0, header, A_BOLD)
         self.window.addstr(self.y + 1, 0, spacer)
         self.window.addstr(self.y + 2, 0, spacer)
-        self.window.addstr(self.y + 3, 0, footer)
 
         # stack
         self._items = []
@@ -117,7 +164,7 @@ class Chart(Widget):
         """ Add an activity. """
         # prevent duplicates
         if name in [i.name for i in self._items]:
-            return
+            return False
 
         # add item
         self.window.move(self.y + 2 + len(self._items), 0)
@@ -125,6 +172,7 @@ class Chart(Widget):
         item = Activity(name=name, time=time)
         self._items.append(item)
         self._draw(item)
+        return True
 
     def toggle(self, key=None):
         """ Disable all active items, enable item with number no. """
@@ -170,28 +218,6 @@ class Activity(object):
         return '{:<12s}  {:>8s}'.format(self.name, str(time))
 
 
-class Reader(Widget):
-    """ Read text. """
-    def _pre(self):
-        self.window.timeout(-1)
-        curs_set(1)
-        echo()
-
-    def _post(self):
-        self.window.timeout(1000)
-        curs_set(0)
-        noecho()
-
-    def read(self, message, length):
-        self._pre()
-        self.window.addstr(self.y, self.x, message)
-        position = self.x + len(message)
-        result = self.window.getstr(self.y, position, length).decode('utf-8')
-        self.window.addstr(self.y, self.x, ' ' * (len(message) + length))
-        self._post()
-        return result
-
-
 def track(window, path):
     # general
     use_default_colors()
@@ -200,21 +226,28 @@ def track(window, path):
     noecho()
 
     # widgets
-    reader = Reader(window=window, y=0, x=0)
+    line = Line(window=window, y=0, x=0)
     chart = Chart(path=path, window=window, y=1, x=0)
 
     # main loop
     while True:
         c = window.getch(0, 0)
         if c == ord('a') and len(chart) < len(KEYS):
-            name = reader.read('New activity: ', NAMEWIDTH)
-            chart.add(name)
+            name = line.read('New activity: ', NAMEWIDTH)
+            if chart.add(name):
+                if len(chart) == len(KEYS):
+                    line.display('press q to quit')
+                line.display('"%s" added.' % name, timeout=3)
+            else:
+                line.display('"%s" already exists.' % name, timeout=3)
         if c == ord('q'):
             chart.toggle()
             break
         if c in ORDS[:len(chart)]:
             chart.toggle(KEYS[ORDS.index(c)])
+
         chart.update()
+        line.update()
 
 
 def get_parser():
