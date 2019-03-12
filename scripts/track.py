@@ -3,8 +3,7 @@
 Timetracker using curses.
 
 Room for improvement:
-- More keys, letters or F-keys maybe.
-- A message when a duplicate name is rejected.
+- A message with timeout when a duplicate name is rejected at first row.
 - An automatic backup even when activities are not switched.
 """
 
@@ -13,6 +12,8 @@ from curses import curs_set, echo, noecho, wrapper, A_BOLD, A_NORMAL
 from datetime import datetime as Datetime, timedelta as Timedelta
 from os.path import exists
 
+KEYS = '123456789bcdefghijklmoprstuvwxyz'
+ORDS = [ord(k) for k in KEYS]
 DATE = '%Y-%m-%d %H:%M:%S'
 NAMEWIDTH = 12
 NAMESTART = len(DATE) + 3  # two extra for the year expansion
@@ -75,10 +76,11 @@ class Chart(Widget):
 
     def _draw(self, item):
         """ Draw item. """
-        no = self._items.index(item) + 1
+        index = self._items.index(item)
+        key = KEYS[index]
         attr = A_BOLD if item.active else A_NORMAL
-        row = str(no) + '  ' + str(item)
-        self.window.addstr(self.y + no + 1, 0, row, attr)
+        row = str(key) + '  ' + str(item)
+        self.window.addstr(self.y + index + 2, 0, row, attr)
 
     def _disable(self):
         """
@@ -99,9 +101,9 @@ class Chart(Widget):
                 with open(self.path, 'a') as f:
                     f.write(template.format(name=name, time=time))
 
-    def _enable(self, no):
+    def _enable(self, key):
         """ Enable item with number no. """
-        item = self._items[no - 1]
+        item = self._items[KEYS.index(key)]
         item.start()
         self._draw(item)
         self.active.append(item)
@@ -119,11 +121,11 @@ class Chart(Widget):
         self._items.append(item)
         self._draw(item)
 
-    def toggle(self, no=None):
+    def toggle(self, key=None):
         """ Disable all active items, enable item with number no. """
         self._disable()
-        if no is not None:
-            self._enable(no)
+        if key is not None:
+            self._enable(key)
 
     def update(self):
         """ Draw active item. """
@@ -198,14 +200,14 @@ def track(window, path):
     # main loop
     while True:
         c = window.getch(0, 0)
+        if c == ord('a') and len(chart) < len(KEYS):
+            name = reader.read('New activity: ', NAMEWIDTH)
+            chart.add(name)
         if c == ord('q'):
             chart.toggle()
             break
-        if c == ord('a') and len(chart) < 9:
-            name = reader.read('New activity: ', NAMEWIDTH)
-            chart.add(name)
-        if ord('1') <= c <= ord(str((len(chart)))):
-            chart.toggle(c - ord('0'))
+        if c in ORDS[:len(chart)]:
+            chart.toggle(KEYS[ORDS.index(c)])
         chart.update()
 
 
