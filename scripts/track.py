@@ -3,9 +3,7 @@
 Timetracker using curses.
 
 Roadmap:
-- Make name in chart tests possible instead of return codes
 - An automatic backup every 5 minutes even when activities are not switched.
-- Prevent blank activities
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -22,11 +20,7 @@ ORDS = [ord(k) for k in KEYS]
 NAMEWIDTH = 12
 
 # stored record configuration
-DATE = '%Y-%m-%d %H:%M:%S'
-NAMESTART = len(DATE) + 3  # two extra for the year expansion
-NAMESLICE = slice(NAMESTART, NAMESTART + NAMEWIDTH)
-TIMESLICE = slice(NAMESLICE.stop + 1, None)
-ACTIVITYRECORD = '%s {name:<%ss} {time}\n' % (DATE, NAMEWIDTH)
+ACTIVITYRECORD = '%Y-%m-%d %H:%M:%S {name} {time}\n'
 
 
 class Widget(object):
@@ -111,12 +105,16 @@ class Chart(Widget):
     def __len__(self):
         return len(self._items)
 
+    def __contains__(self, name):
+        return name in [i.name for i in self._items]
+
     def _load(self):
         """ Restore state from file. """
         # parser for the file
         def parse(f):
             for line in f:
-                yield line[NAMESLICE].strip(), float(line[TIMESLICE])
+                parts = line.split()[2:]
+                yield parts[0], float(parts[1])
 
         # aggregate into dict
         with open(self.path) as f:
@@ -149,7 +147,7 @@ class Chart(Widget):
             if self.path:
                 template = Datetime.now().strftime(ACTIVITYRECORD)
                 name = item.name
-                time = item.time.total_seconds()
+                time = round(item.time.total_seconds())
                 with open(self.path, 'a') as f:
                     f.write(template.format(name=name, time=time))
 
@@ -162,17 +160,11 @@ class Chart(Widget):
 
     def add(self, name, time=0):
         """ Add an activity. """
-        # prevent duplicates
-        if name in [i.name for i in self._items]:
-            return False
-
-        # add item
         self.window.move(self.y + 2 + len(self._items), 0)
         self.window.insertln()
         item = Activity(name=name, time=time)
         self._items.append(item)
         self._draw(item)
-        return True
 
     def toggle(self, key=None):
         """ Disable all active items, enable item with number no. """
@@ -233,13 +225,16 @@ def track(window, path):
     while True:
         c = window.getch(0, 0)
         if c == ord('a') and len(chart) < len(KEYS):
-            name = line.read('New activity: ', NAMEWIDTH)
-            if chart.add(name):
+            name = line.read('new activity: ', NAMEWIDTH)
+            if not name or ' ' in name:
+                line.display('no spaces allowed in name', timeout=3)
+            elif name in chart:
+                line.display('"%s" already exists' % name, timeout=3)
+            else:
+                chart.add(name)
                 if len(chart) == len(KEYS):
                     line.display('press q to quit')
                 line.display('"%s" added.' % name, timeout=3)
-            else:
-                line.display('"%s" already exists.' % name, timeout=3)
         if c == ord('q'):
             chart.toggle()
             break
