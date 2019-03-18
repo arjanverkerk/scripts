@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Timetracker using curses.
-
-Roadmap:
-- An automatic backup every 5 minutes even when activities are not switched.
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -37,22 +34,45 @@ class Line(Widget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._text = 'press a to add, q to quit'
-        self._reset = None
-        self._draw(self._text)
+        self._header = 'press a to add, q to quit'
+        self._messages = {}
+        self.update()
 
-    def display(self, text, timeout=None):
-        if timeout is None:
-            self._text = text
+    def display(self, text, seconds=None):
+        """
+        Display text for some seconds.
+
+        If seconds is None, set text as header.
+        """
+        if seconds is None:
+            # a new header
+            self._header = text
         else:
-            self._reset = Datetime.now() + Timedelta(seconds=timeout)
-        self._draw(text)
+            # add to messages
+            timedelta = Timedelta(seconds=seconds)
+            if self._messages:
+                until = max(self._messages) + timedelta
+            else:
+                until = Datetime.now() + timedelta
+            self._messages[until] = text
+
+        # draw
+        self.update()
 
     def update(self):
-        """ Call draw if """
-        if self._reset is not None and self._reset < Datetime.now():
-            self._draw(self._text)
-            self._reset = None
+        """ Draw current message or default header. """
+        now = Datetime.now()
+        for until in sorted(self._messages):
+            if until < now:
+                # discard outdated
+                del self._messages[until]
+                continue
+            # draw message
+            self._draw(self._messages[until])
+            break  # skips the else clause of the for loop
+        else:
+            # no message was drawn, draw header
+            self._draw(self._header)
 
     def read(self, text, length):
         self._pre()
@@ -73,7 +93,7 @@ class Line(Widget):
         echo()
 
     def _post(self):
-        self.window.timeout(1000)
+        self.window.timeout(1000)  # milliseconds
         curs_set(0)
         noecho()
 
@@ -227,14 +247,14 @@ def track(window, path):
         if c == ord('a') and len(chart) < len(KEYS):
             name = line.read('new activity: ', NAMEWIDTH)
             if not name or ' ' in name:
-                line.display('no spaces allowed in name', timeout=3)
+                line.display('no spaces allowed in name', seconds=3)
             elif name in chart:
-                line.display('"%s" already exists' % name, timeout=3)
+                line.display('"%s" already exists' % name, seconds=3)
             else:
                 chart.add(name)
+                line.display('"%s" added.' % name, seconds=3)
                 if len(chart) == len(KEYS):
                     line.display('press q to quit')
-                line.display('"%s" added.' % name, timeout=3)
         if c == ord('q'):
             chart.toggle()
             break
