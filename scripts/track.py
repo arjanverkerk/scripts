@@ -246,7 +246,9 @@ def track(window, path):
         c = window.getch(0, 0)
         if c == ord('a') and len(chart) < len(KEYS):
             name = line.read('new activity: ', NAMEWIDTH)
-            if not name or ' ' in name:
+            if not name:
+                line.display('cannot add empty name', seconds=3)
+            elif ' ' in name:
                 line.display('no spaces allowed in name', seconds=3)
             elif name in chart:
                 line.display('"%s" already exists' % name, seconds=3)
