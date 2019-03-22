@@ -254,11 +254,10 @@ def track(window, path):
                 line.display('"%s" already exists' % name, seconds=3)
             else:
                 chart.add(name)
-                line.display('"%s" added.' % name, seconds=3)
                 if len(chart) == len(KEYS):
                     line.display('press q to quit')
         if c == ord('q'):
-            chart.toggle()
+            chart.toggle()  # write a line to the log
             break
         if c in ORDS[:len(chart)]:
             chart.toggle(KEYS[ORDS.index(c)])
