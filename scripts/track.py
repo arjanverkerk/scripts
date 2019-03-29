@@ -225,9 +225,21 @@ class Activity(object):
         return self._last is not None
 
     def __str__(self):
-        time = self.time
-        time -= Timedelta(microseconds=time.microseconds)  # strip micros
-        return '{:<12s}  {:>8s}'.format(self.name, str(time))
+        """ Return the name and the time of the activity. """
+        total_seconds = self.time.total_seconds()
+
+        # Some math to have hours beyond 23
+        seconds = int(total_seconds % 60)
+        minutes = int(total_seconds % 3600 // 60)
+        hours = int(total_seconds // 3600)
+
+        result = '{:<12s}  {:2d}:{:02d}:{:02d}'.format(
+            self.name,
+            hours,
+            minutes,
+            seconds,
+        )
+        return result
 
 
 def track(window, path):
