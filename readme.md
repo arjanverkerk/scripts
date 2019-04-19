@@ -4,18 +4,13 @@ scripts
 
 Requirements
 ------------
-apt install libgdal-dev libhdf5-serial-dev libnetcdf-dev
+apt install python3-gdal libhdf5-serial-dev libnetcdf-dev
 
 
 Install
 -------
-pipenv sync --dev
-
-
-Pipenv
-------
-Any vcs checkouts are deliberately not included in any setup.py, since pip will
-fail miserably in finding a suitable package for it on the web.
+virtualenv --python=python3 --system-site-packages
+bin/pip install -r requirements.txt
 
 
 Gallery

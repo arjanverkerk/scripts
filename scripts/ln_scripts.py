@@ -13,7 +13,7 @@ import console
 
 BIN_DIR = os.path.join(
     os.path.dirname(console.__file__),
-    '.venv/bin',
+    'bin',
 )
 
 

@@ -1,4 +1,12 @@
-Pipfile
+# virtualenv
+bin
+include
+lib
+share
+src
+
+# compiled stuff
 *.py[cod]
-.venv
+
+# egg
 scripts.egg-info/
