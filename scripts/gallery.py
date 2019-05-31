@@ -3,6 +3,13 @@
 Gallery creator. Any movies in the source should have a poster with the
 same name as the video, but having a '.jpg' extension. Run from your
 www folder where the assets are found.
+
+TODO:
+- We start using mpv for both pictures and videos, with subtitles
+- create subtitle files with image identifier
+- create a playlist with some logical order
+- create a bash script that plays
+- stop doing handbrake stuff and thumbnail creation and template stuff
 """
 
 from __future__ import print_function
