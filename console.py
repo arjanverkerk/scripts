@@ -26,8 +26,7 @@ scripts = [
     'gcalendar        = scripts.gcalendar:main',
     'newpy            = scripts.newpy:main',
     'track            = scripts.track:main',
-    'tst-exif         = scripts.tst.tst_exif:main',
-    'tst-now          = scripts.tst.tst_now:main',
+    'tst-exif         = scripts.tst_exif:main',
 ]
 
 # Some extra commands to symlink
