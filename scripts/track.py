@@ -133,8 +133,8 @@ class Chart(Widget):
         # parser for the file
         def parse(f):
             for line in f:
-                parts = line.split()
-                yield parts[-2], float(parts[-1])
+                parts = line.split(sep=' ')  # allow for nbsp
+                yield parts[-2], int(parts[-1])
 
         # aggregate into dict
         with open(self.path) as f:
