@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from __future__ import division
-
 import argparse
 import os
 
 import console
+import pathlib
 
-
-BIN_DIR = os.path.join(
-    os.path.dirname(console.__file__),
-    'bin',
-)
+SOURCE_DIR = pathlib.Path(console.__file__).parent / 'bin'
+TARGET_DIR = pathlib.Path.home() / '.local/bin'
 
 
 def get_parser():
@@ -35,14 +28,16 @@ def get_names():
 
 def action():
     """ Create symlinks for all console_scripts of scripts."""
+    os.makedirs(TARGET_DIR, exist_ok=True)
+
     for name in get_names():
-        source = os.path.join(BIN_DIR, name)
-        target = os.path.join('/usr/local/bin', name)
+        source = SOURCE_DIR / name
+        target = TARGET_DIR / name
         try:
             os.symlink(source, target)
-            print('Created: {}'.format(name))
+            print(f'Created: {name}')
         except OSError as error:
-            print('{}: {}'.format(error.strerror, name))
+            print(f'{error.strerror}: {name}')
 
 
 def main():
