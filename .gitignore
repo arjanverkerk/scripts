@@ -1,9 +1,5 @@
 # virtualenv
-bin
-include
-lib
-share
-src
+.venv
 
 # compiled stuff
 *.py[cod]

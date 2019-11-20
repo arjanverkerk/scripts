@@ -6,8 +6,8 @@ import os
 import console
 import pathlib
 
-SOURCE_DIR = pathlib.Path(console.__file__).parent / 'bin'
-TARGET_DIR = pathlib.Path.home() / '.local/bin'
+SCRIPT_DIR = pathlib.Path(console.__file__).parent / '.venv/bin'
+BIN_DIR = pathlib.Path.home() / '.local/bin'
 
 
 def get_parser():
@@ -28,14 +28,19 @@ def get_names():
 
 def action():
     """ Create symlinks for all console_scripts of scripts."""
-    os.makedirs(TARGET_DIR, exist_ok=True)
+    os.makedirs(BIN_DIR, exist_ok=True)
 
     for name in get_names():
-        source = SOURCE_DIR / name
-        target = TARGET_DIR / name
+        script = SCRIPT_DIR / name
+        link = BIN_DIR / name
+
         try:
-            os.symlink(source, target)
-            print(f'Created: {name}')
+            if link.is_symlink():
+                link.unlink()
+                print(f'Update: {name}')
+            else:
+                print(f'Create: {name}')
+            link.symlink_to(script)
         except OSError as error:
             print(f'{error.strerror}: {name}')
 
