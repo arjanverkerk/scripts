@@ -1,10 +1,4 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from __future__ import division
 
 import argparse
 import csv
@@ -19,6 +13,9 @@ Final Exam,05/12/08,07:10:00 PM,05/12/08,10:00:00 PM,False,Two
 essay questions that will cover topics covered throughout the
 semester,"Columbia, Schermerhorn 614",True
 """
+
+# guess year based on now
+YEAR = (datetime.datetime.now() + datetime.timedelta(days=31)).year
 
 
 def get_parser():
@@ -60,7 +57,7 @@ def command(sourcepath, targetpath):
         time = record['tijd'].replace('.', ':').strip()
         dt1 = datetime.datetime.strptime(
             ' '.join([date, time]), '%d-%m %H:%M',
-        ).replace(year=2019)
+        ).replace(year=YEAR)
         dt2 = dt1 + datetime.timedelta(minutes=90)
 
         # Base data
@@ -82,9 +79,9 @@ def command(sourcepath, targetpath):
             result.update({'Subject': 'Piano {}'.format(piano)})
             writer.writerow(result)
 
-        team = record['MT'].replace('MT', '').strip()
+        team = record['MT'].strip()
         if team:
-            result.update({'Subject': 'Muziekteam {}'.format(team)})
+            result.update({'Subject': '{}'.format(team)})
             writer.writerow(result)
 
     sourcefile.close()
