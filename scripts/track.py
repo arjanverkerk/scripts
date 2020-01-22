@@ -4,8 +4,8 @@ Timetracker using curses.
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from curses import A_BOLD, A_NORMAL
-from curses import curs_set, echo, noecho, wrapper, use_default_colors
+from curses import A_BOLD, A_NORMAL, KEY_RESIZE
+from curses import curs_set, echo, error, noecho, use_default_colors, wrapper
 from datetime import datetime as Datetime, timedelta as Timedelta
 from os.path import exists
 
@@ -26,6 +26,13 @@ class Widget(object):
         self.window = window
         self.y = y
         self.x = x
+
+    def addstr(self, *args, **kwargs):
+        """ Very forgiving version of window.addstr(). """
+        try:
+            self.window.addstr(*args, **kwargs)
+        except error:
+            pass
 
 
 class Line(Widget):
@@ -85,7 +92,7 @@ class Line(Widget):
 
     def _draw(self, text):
         blank = ' ' * (self.WIDTH - len(text))
-        self.window.addstr(self.y, self.x, text + blank)
+        self.addstr(self.y, self.x, text + blank)
 
     def _pre(self):
         self.window.timeout(-1)
@@ -103,16 +110,12 @@ class Chart(Widget):
     def __init__(self, path, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # table
-        header = '#    activity      time  '
-        spacer = '-  ------------  --------'
-        self.window.addstr(self.y + 0, 0, header, A_BOLD)
-        self.window.addstr(self.y + 1, 0, spacer)
-        self.window.addstr(self.y + 2, 0, spacer)
-
         # stack
-        self._items = []
+        self.items = []
         self.active = []
+
+        # draw the frame
+        self._draw_frame()
 
         # backup
         self.path = path
@@ -123,10 +126,10 @@ class Chart(Widget):
         self.toggle(KEYS[0])
 
     def __len__(self):
-        return len(self._items)
+        return len(self.items)
 
     def __contains__(self, name):
-        return name in [i.name for i in self._items]
+        return name in [i.name for i in self.items]
 
     def _load(self):
         """ Restore state from file. """
@@ -144,13 +147,23 @@ class Chart(Widget):
         for name, time in names_and_times.items():
             self.add(name=name, time=time)
 
-    def _draw(self, item):
-        """ Draw item. """
-        index = self._items.index(item)
+    def _draw_frame(self):
+        """ Draw frame parts. """
+        n = len(self.items) + 2
+        header = '#    activity      time  '
+        spacer = '-  ------------  --------'
+        self.addstr(self.y + 0, 0, header, A_BOLD)
+        self.addstr(self.y + 1, 0, spacer)
+        self.addstr(self.y + n, 0, spacer)
+        self.window.clrtobot()
+
+    def _draw_item(self, item):
+        """ Draw a single item. """
+        index = self.items.index(item)
         key = KEYS[index]
         attr = A_BOLD if item.active else A_NORMAL
         row = str(key) + '  ' + str(item)
-        self.window.addstr(self.y + index + 2, 0, row, attr)
+        self.addstr(self.y + index + 2, 0, row, attr)
 
     def _disable(self):
         """
@@ -162,7 +175,7 @@ class Chart(Widget):
             # disable
             item = self.active.pop()
             item.stop()
-            self._draw(item)
+            self._draw_item(item)
             # log state of item
             if self.path:
                 template = Datetime.now().strftime(ACTIVITYRECORD)
@@ -173,21 +186,21 @@ class Chart(Widget):
 
     def _enable(self, key):
         """ Enable item with number no. """
-        item = self._items[KEYS.index(key)]
+        item = self.items[KEYS.index(key)]
         item.start()
-        self._draw(item)
+        self._draw_item(item)
         self.active.append(item)
 
     def add(self, name, time=0):
         """ Add an activity. """
-        self.window.move(self.y + 2 + len(self._items), 0)
+        self.window.move(self.y + 2 + len(self.items), 0)
         self.window.insertln()
         item = Activity(name=name, time=time)
-        self._items.append(item)
-        self._draw(item)
+        self.items.append(item)
+        self._draw_item(item)
 
     def toggle(self, key=None):
-        """ Disable all active items, enable item with number no. """
+        """ Disable all active items, enable item by key. """
         self._disable()
         if key is not None:
             self._enable(key)
@@ -195,7 +208,13 @@ class Chart(Widget):
     def update(self):
         """ Draw active item. """
         for item in self.active:
-            self._draw(item)
+            self._draw_item(item)
+
+    def update_all(self):
+        """ Draw frame and all items. """
+        self._draw_frame()
+        for item in self.items:
+            self._draw_item(item)
 
 
 class Activity(object):
@@ -256,6 +275,8 @@ def track(window, path):
     # main loop
     while True:
         c = window.getch(0, 0)
+        if c == KEY_RESIZE:
+            chart.update_all()
         if c == ord('a') and len(chart) < len(KEYS):
             name = line.read('new activity: ', NAMEWIDTH)
             if not name:
