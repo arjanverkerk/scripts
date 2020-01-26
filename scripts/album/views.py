@@ -4,11 +4,6 @@ Main reason to keep this doc is the implementation of partial content
 using flask.
 """
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from __future__ import division
-
 from scripts.album import config
 from scripts.album import meta
 from scripts.album import utils
