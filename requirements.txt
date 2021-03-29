@@ -1,5 +1,5 @@
 -e git+https://github.com/nens/naw.git@master#egg=naw
-Pygments==2.3.1
+Pygments==2.7.4
 backcall==0.1.0
 cftime==1.0.3.4
 decorator==4.4.0
