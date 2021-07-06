@@ -26,9 +26,6 @@ scripts = [
 
 # Some extra commands to symlink
 commands = [
-    'flake8',
-    'ipython',
     'naw',
-    'python',
     'turn',
 ]
