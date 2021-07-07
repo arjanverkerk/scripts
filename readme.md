@@ -16,6 +16,7 @@ Create a virtualenv::
 
 Install dependencies & package and run tests::
 
+    $ rm -rf .venv
     $ virtualenv .venv --system-site-packages
     $ .venv/bin/pip install -r requirements.txt
     $ .venv/bin/pip install -e .[test]
@@ -27,3 +28,14 @@ Update packages::
     $ .venv/bin/pip install -e .
     $ .venv/bin/pip freeze --local | grep -v scripts > requirements.txt
 ```
+
+
+
+rm -rf .venv
+virtualenv .venv --system-site-packages
+.venv/bin/pip install -e .
+.venv/bin/pip freeze --local | grep -v scripts > requirements.txt
+rm -rf .venv
+virtualenv .venv --system-site-packages
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .[test]

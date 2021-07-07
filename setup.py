@@ -12,12 +12,11 @@ install_requires = [
     'gdal',
     'h5py',
     'lz4',
-    'netCDF4',
     'numpy',
-    'redis',
+    'scipy',
 ]
 
-tests_require = ["flake8", "pytest", "pytest-cov"]
+tests_require = ['flake8', 'ipython', 'pytest', 'pytest-cov']
 
 setup(
     name=name,
