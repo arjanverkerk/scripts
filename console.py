@@ -28,6 +28,7 @@ scripts = [
 commands = [
     "black",
     "flake8",
+    "fullrelease",
     "ipython",
     "pip",
     "python",

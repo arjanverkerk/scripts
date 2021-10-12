@@ -14,6 +14,7 @@ install_requires = [
     'lz4',
     'numpy',
     'scipy',
+    'zest.releaser',
 ]
 
 tests_require = ['flake8', 'ipython', 'pytest', 'pytest-cov']
