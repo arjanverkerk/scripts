@@ -31,5 +31,6 @@ commands = [
     "fullrelease",
     "ipython",
     "pip",
+    "pre-commit",
     "python",
 ]

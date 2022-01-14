@@ -8,16 +8,22 @@ name = 'scripts'
 version = '0.1'
 
 install_requires = [
-    'Pillow',
-    'gdal',
-    'h5py',
-    'lz4',
-    'numpy',
-    'scipy',
-    'zest.releaser',
+    "Pillow",
+    "gdal",
+    "h5py",
+    "lz4",
+    "numpy",
+    "scipy",
+    "zest.releaser",
 ]
 
-tests_require = ['flake8', 'ipython', 'pytest', 'pytest-cov']
+tests_require = [
+    "flake8",
+    "ipython",
+    "pytest",
+    "pre-commit",
+    "pytest-cov",
+]
 
 setup(
     name=name,
