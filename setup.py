@@ -19,9 +19,10 @@ install_requires = [
 
 tests_require = [
     "flake8",
+    "ipdb",
     "ipython",
-    "pytest",
     "pre-commit",
+    "pytest",
     "pytest-cov",
 ]
 
