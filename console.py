@@ -17,7 +17,6 @@ scripts = [
     # various
     "annotate         = scripts.annotate:main",
     "enumerate        = scripts.enumerate:main",
-    "gallery          = scripts.gallery.gallery:main",
     "gcalendar        = scripts.gcalendar:main",
     "newpy            = scripts.newpy:main",
     "track            = scripts.track:main",
