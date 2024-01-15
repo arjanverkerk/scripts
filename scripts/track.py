@@ -122,7 +122,7 @@ class Chart(Widget):
         if self.path is not None and exists(self.path):
             self._load()
         else:
-            self.add('idle')
+            self.add('other')
         self.toggle(KEYS[0])
 
     def __len__(self):
